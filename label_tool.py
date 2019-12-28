@@ -709,6 +709,12 @@ if __name__ == '__main__':
             [from_path] [to_path] : copy voc sample on percent
         copy-coco
             [from_file_path] [from_image_path] [to_file_path] [to_image_path] : copy coco sample on percent
+        remove-voc
+            [voc_dir] : remove specify prefix part
+        remove-json
+            [json_dir] : remove specify prefix part
+        remove-coco 
+            [coco_file_path] [coco_image_path] : remove specify prefix part
         json-to-voc 
             [coco_dir] [voc_dir] : convert json annotatino to voc annotation
         voc-to-json
