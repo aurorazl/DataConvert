@@ -83,6 +83,12 @@ def add_xml_element(elem,key,val,new=False):
         child.text = str(val)
         node.append(child)
 
+def check_path_exit_or_raise_exception(*args,**kwargs):
+    for i in args:
+        if not os.path.exists(i):
+            raise Exception("{} not found!!!".format(i))
+
+
 filename_pattern = re.compile(r"(\S+)\.(xml|json)")
 gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json)")
 number_pattern = re.compile(r"(\S*?)(\d+)")
@@ -221,7 +227,7 @@ def get_dir_path_max_num(dir_path,prefix):
                 max_num = num
     return max_num
 
-def gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_image_path,prefix):
+def gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_image_path,prefix,args):
     src_list = os.listdir(voc_anno_path)
     max_num = get_dir_path_max_num(json_anno_path,prefix)
     name_list = []
@@ -231,7 +237,8 @@ def gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_image_p
             max_num += 1
             image_id = one.split('.')[0]
             new_image_path =prefix+str(max_num)+".jpg"
-            shutil.copyfile(os.path.join(voc_image_path,str(image_id)+".jpg"), os.path.join(json_image_path,new_image_path))
+            if args and args.ignore_image:
+                shutil.copyfile(os.path.join(voc_image_path,str(image_id)+".jpg"), os.path.join(json_image_path,new_image_path))
             new_anno_name = prefix + str(max_num)
             name_list.append(new_anno_name)
             map_path[new_anno_name] = one
@@ -240,13 +247,13 @@ def gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_image_p
     pbar = pyprind.ProgBar(len(name_list),monitor=True)
     return name_list
 
-def merge_voc_dataset_to_json_dataset(voc_anno_path,voc_image_path,json_path,prefix=""):
+def merge_voc_dataset_to_json_dataset(voc_anno_path,voc_image_path,json_path,prefix="",args=None):
     check_anno_image_number(voc_anno_path,voc_image_path)
     image_id_list = []
     json_anno_path = os.path.join(json_path,"images")
     if not os.path.exists(json_anno_path):
         os.makedirs(json_anno_path,exist_ok=True)
-    for image_id in gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_anno_path,prefix):
+    for image_id in gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_anno_path,prefix,args):
         image_id_list.append(image_id)
         json_dict = one_voc_format_to_json_format(voc_anno_path,map_path[image_id], image_id)
         dir_file = os.path.join(json_path, "images", str(image_id) + ".json")
@@ -263,11 +270,11 @@ def merge_voc_dataset_to_json_dataset(voc_anno_path,voc_image_path,json_path,pre
         f.write(json.dumps({"ImgIDs":ImgIDs},indent=4, separators=(',', ':')))
     shutil.copyfile("./meta.json",os.path.join(json_path,"meta.json"))
 
-def merge_json_dataset_to_voc_dataset(json_path,voc_anno_path,voc_image_path,prefix=""):
+def merge_json_dataset_to_voc_dataset(json_path,voc_anno_path,voc_image_path,prefix="",args=None):
     if not os.path.exists(voc_image_path):
         os.mkdir(voc_image_path)
     json_anno_path = os.path.join(json_path, "images")
-    for image_id in gen_image_name_list(json_anno_path,json_anno_path,voc_anno_path,voc_image_path, prefix):
+    for image_id in gen_image_name_list(json_anno_path,json_anno_path,voc_anno_path,voc_image_path, prefix,args):
         file_path = os.path.join(json_anno_path,map_path[image_id])
         with open(file_path,"r") as f:
             coco_dict = json.load(f)
@@ -301,7 +308,7 @@ def get_exists_coco_max_num(coco_output_path,coco,prefix):
                     max_num = num
     return max_num
 
-def merge_voc_dataset_to_coco_dataset(voc_anno_path,voc_image_path,coco_output_path,coco_image_path,prefix=""):
+def merge_voc_dataset_to_coco_dataset(voc_anno_path,voc_image_path,coco_output_path,coco_image_path,prefix="",args=None):
     max_num = 0
     if os.path.exists(coco_output_path):
         coco = {"images": [], "annotations": []}
@@ -322,7 +329,8 @@ def merge_voc_dataset_to_coco_dataset(voc_anno_path,voc_image_path,coco_output_p
             json_dict = one_voc_format_to_json_format(voc_anno_path,one,new_image_id)
             coco["images"].extend(json_dict["images"])
             coco["annotations"].extend(json_dict["annotations"])
-            shutil.copyfile(os.path.join(voc_image_path, str(image_id) + ".jpg"),os.path.join(coco_image_path,str(new_image_id)+".jpg"))
+            if args and args.ignore_image:
+                shutil.copyfile(os.path.join(voc_image_path, str(image_id) + ".jpg"),os.path.join(coco_image_path,str(new_image_id)+".jpg"))
             pbar.update()
     with open(coco_output_path, "w") as f:
         f.write(json.dumps(coco, indent=4, separators=(',', ':')))
@@ -332,7 +340,7 @@ def get_file_name_from_coco(li,image_id):
         if i.get("id")==image_id:
             return i.get("file_name")
 
-def merge_coco_to_voc_dataset(coco_file_path,coco_image_path,voc_anno_path,voc_image_path,prefix=""):
+def merge_coco_to_voc_dataset(coco_file_path,coco_image_path,voc_anno_path,voc_image_path,prefix="",args=None):
     if not os.path.exists(voc_image_path):
         os.mkdir(voc_image_path)
     coco = COCO(coco_file_path)
@@ -355,10 +363,11 @@ def merge_coco_to_voc_dataset(coco_file_path,coco_image_path,voc_anno_path,voc_i
         else:
             with open(dir_file, "w+") as f:
                 f.write(minidom.parseString(tostring(elem)).toprettyxml().replace('<?xml version="1.0" ?>\n', ""))
-            shutil.copyfile(os.path.join(coco_image_path,old_image_name),os.path.join(voc_image_path,new_image_id+".jpg"))
+            if args and args.ignore_image:
+                shutil.copyfile(os.path.join(coco_image_path,old_image_name),os.path.join(voc_image_path,new_image_id+".jpg"))
         pbar.update()
 
-def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix=""):
+def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="",args=None):
     json_anno_path = os.path.join(json_path, "images")
     if not os.path.exists(json_anno_path):
         os.makedirs(os.path.join(json_anno_path))
@@ -392,14 +401,15 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
         # copy img file
         img_path = os.path.join(coco_image_path, json_dict["images"][0]["file_name"])
         if os.path.exists(img_path):
-            shutil.copyfile(img_path, os.path.join(json_path, "images", "{}.jpg".format(new_image_id)))
+            if args and args.ignore_image:
+                shutil.copyfile(img_path, os.path.join(json_path, "images", "{}.jpg".format(new_image_id)))
         else:
             print("'{}' file does not exist.".format(img_path))
         pbar.update()
     with open(os.path.join(json_path, "list.json") , "w") as f:
         f.write(json.dumps({"ImgIDs":new_image_id_list},indent=4, separators=(',', ':')))
 
-def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix=""):
+def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="",args=None):
     max_num = 0
     if not os.path.exists(coco_image_path):
         os.makedirs(coco_image_path)
@@ -430,7 +440,8 @@ def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="
         coco["images"].extend(json_dict["images"])
         coco["annotations"].extend(json_dict["annotations"])
         source_path = os.path.join(json_path, 'images', "{}.jpg".format(ImgID))
-        shutil.copyfile(source_path, os.path.join(coco_image_path, "{}.jpg".format(new_image_id)))
+        if args and args.ignore_image:
+            shutil.copyfile(source_path, os.path.join(coco_image_path, "{}.jpg".format(new_image_id)))
         pbar.update()
     with open(coco_file_path, "w") as f:
         f.write(json.dumps(coco, indent=4, separators=(',', ':')))
@@ -660,37 +671,43 @@ def run_command(args, command, nargs, parser ):
             parser.print_help()
             print("merge-voc-to-json [voc_path] [json_path]")
         else:
-            merge_voc_dataset_to_json_dataset(os.path.join(nargs[0],"Annotations"),os.path.join(nargs[0],"JPEGImages"), nargs[1],prefix=args.prefix)
+            check_path_exit_or_raise_exception(os.path.join(nargs[0],"Annotations"),os.path.join(nargs[0],"JPEGImages"))
+            merge_voc_dataset_to_json_dataset(os.path.join(nargs[0],"Annotations"),os.path.join(nargs[0],"JPEGImages"), nargs[1],prefix=args.prefix,args=args)
     elif command == "merge-voc-to-coco":
         if len(nargs) != 3:
             parser.print_help()
             print("merge-voc-to-coco [voc_path] [coco_output_file_path] [coco_img_path]")
         else:
-            merge_voc_dataset_to_coco_dataset(os.path.join(nargs[0],"Annotations"), os.path.join(nargs[0],"JPEGImages"),nargs[1],nargs[2],prefix=args.prefix)
+            check_path_exit_or_raise_exception(os.path.join(nargs[0],"Annotations"), os.path.join(nargs[0],"JPEGImages"))
+            merge_voc_dataset_to_coco_dataset(os.path.join(nargs[0],"Annotations"), os.path.join(nargs[0],"JPEGImages"),nargs[1],nargs[2],prefix=args.prefix,args=args)
     elif command == "merge-coco-to-voc":
         if len(nargs) != 3:
             parser.print_help()
             print("merge-coco-to-voc [coco_file_path] [coco_image_path] [voc_path]")
         else:
-            merge_coco_to_voc_dataset(nargs[0],nargs[1],os.path.join(nargs[2],"Annotations"),os.path.join(nargs[2],"JPEGImages"),prefix=args.prefix)
+            check_path_exit_or_raise_exception(nargs[0],nargs[1])
+            merge_coco_to_voc_dataset(nargs[0],nargs[1],os.path.join(nargs[2],"Annotations"),os.path.join(nargs[2],"JPEGImages"),prefix=args.prefix,args=args)
     elif command == "merge-json-to-voc":
         if len(nargs) != 2:
             parser.print_help()
             print("merge-json-to-voc [json_path] [voc_path]")
         else:
-            merge_json_dataset_to_voc_dataset(nargs[0],os.path.join(nargs[1],"Annotations"),os.path.join(nargs[1],"JPEGImages"),prefix=args.prefix)
+            check_path_exit_or_raise_exception(nargs[0])
+            merge_json_dataset_to_voc_dataset(nargs[0],os.path.join(nargs[1],"Annotations"),os.path.join(nargs[1],"JPEGImages"),prefix=args.prefix,args=args)
     elif command == "merge-coco-to-json":
         if len(nargs) != 3:
             parser.print_help()
             print("merge-coco-to-json [coco_file_path] [coco_image_path] [json_path]\n")
         else:
-            merge_coco_to_json_dataset(nargs[0],nargs[1],nargs[2],prefix=args.prefix)
+            check_path_exit_or_raise_exception(nargs[0],nargs[1])
+            merge_coco_to_json_dataset(nargs[0],nargs[1],nargs[2],prefix=args.prefix,args=args)
     elif command == "merge-json-to-coco":
         if len(nargs) != 3:
             parser.print_help()
             print("merge-json-to-coco [json_path] [coco_file_path] [coco_image_path]\n")
         else:
-            merge_json_to_coco_dataset(nargs[0],nargs[1],nargs[2],prefix=args.prefix)
+            check_path_exit_or_raise_exception(nargs[0])
+            merge_json_to_coco_dataset(nargs[0],nargs[1],nargs[2],prefix=args.prefix,args=args)
     else:
         parser.print_help()
 
@@ -736,6 +753,11 @@ if __name__ == '__main__':
                         default="",
                         help="generate file'prefix",
                         action="store"
+                        )
+    parser.add_argument("--ignore-image",
+                        default=False,
+                        help="dont copy image",
+                        action="store_true"
                         )
     parser.add_argument("--percent",
                         default=0,
