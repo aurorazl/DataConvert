@@ -13,6 +13,11 @@ from xml.etree.ElementTree import tostring
 from pycocotools.coco import COCO
 from xml.dom import minidom
 
+filename_pattern = re.compile(r"(\S+)\.(xml|json)")
+gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json)")
+number_pattern = re.compile(r"(\S*?)(\d+)")
+
+
 def get(root, name):
     vars = root.findall(name)
     return vars
@@ -83,9 +88,7 @@ def add_xml_element(elem,key,val,new=False):
         child.text = str(val)
         node.append(child)
 
-filename_pattern = re.compile(r"(\S+)\.(xml|json)")
-gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json)")
-number_pattern = re.compile(r"(\S*?)(\d+)")
+
 def quick_sort(li):
     _quick_sort(li,0,len(li)-1)
 def _quick_sort(li,left,right):
@@ -616,79 +619,79 @@ def run_command(args, command, nargs, parser ):
     elif command == "remove-json":
         if len(nargs) != 1:
             parser.print_help()
-            print("remove-json [json_dir]")
+            print("\n [--prefix xxx] remove-json [json_dir]")
         else:
             remove_json_by_prefix(nargs[0], prefix=args.prefix)
     elif command == "remove-voc":
         if len(nargs) != 1:
             parser.print_help()
-            print("remove-voc [voc_dir]")
+            print("\n [--prefix xxx] remove-voc [voc_dir]")
         else:
             remove_voc_by_prefix(nargs[0], prefix=args.prefix)
     elif command == "remove-coco":
         if len(nargs) != 2:
             parser.print_help()
-            print("remove-coco [coco_file_path] [coco_image_path]")
+            print("\n [--prefix xxx] remove-coco [coco_file_path] [coco_image_path]")
         else:
             remove_coco_by_prefix(nargs[0],nargs[1], prefix=args.prefix)
     elif command == "copy":
         if len(nargs) != 2:
             parser.print_help()
-            print("copy [from_path] [to_path]")
+            print("\n [--percent 0.1] [--number 100] copy [from_path] [to_path]")
         else:
             copy_dir_by_percent(nargs[0], nargs[1],percent=args.percent,number=args.number)
     elif command == "copy-json":
         if len(nargs) != 2:
             parser.print_help()
-            print("copy-json [from_path] [to_path]")
+            print("\n [--percent 0.1] [--number 100] copy-json [from_path] [to_path]")
         else:
             copy_json_by_percent(nargs[0], nargs[1],percent=args.percent,number=args.number)
     elif command == "copy-voc":
         if len(nargs) != 2:
             parser.print_help()
-            print("copy-json [from_path] [to_path]")
+            print("\n [--percent 0.1] [--number 100] copy-json [from_path] [to_path]")
         else:
             copy_voc_by_percent(nargs[0], nargs[1],percent=args.percent,number=args.number)
     elif command == "copy-coco":
         if len(nargs) != 4:
             parser.print_help()
-            print("copy-coco [from_file_path] [from_image_path] [to_file_path] [to_image_path]")
+            print("\n [--percent 0.1] [--number 100] copy-coco [from_file_path] [from_image_path] [to_file_path] [to_image_path]")
         else:
             copy_coco_by_percent(nargs[0], nargs[1], nargs[2], nargs[3],percent=args.percent,number=args.number)
     elif command == "merge-voc-to-json":
         if len(nargs) != 2:
             parser.print_help()
-            print("merge-voc-to-json [voc_path] [json_path]")
+            print("\n [--prefix xxx] merge-voc-to-json [voc_path] [json_path]")
         else:
             merge_voc_dataset_to_json_dataset(os.path.join(nargs[0],"Annotations"),os.path.join(nargs[0],"JPEGImages"), nargs[1],prefix=args.prefix)
     elif command == "merge-voc-to-coco":
         if len(nargs) != 3:
             parser.print_help()
-            print("merge-voc-to-coco [voc_path] [coco_output_file_path] [coco_img_path]")
+            print("\n [--prefix xxx] merge-voc-to-coco [voc_path] [coco_output_file_path] [coco_img_path]")
         else:
             merge_voc_dataset_to_coco_dataset(os.path.join(nargs[0],"Annotations"), os.path.join(nargs[0],"JPEGImages"),nargs[1],nargs[2],prefix=args.prefix)
     elif command == "merge-coco-to-voc":
         if len(nargs) != 3:
             parser.print_help()
-            print("merge-coco-to-voc [coco_file_path] [coco_image_path] [voc_path]")
+            print("\n [--prefix xxx] merge-coco-to-voc [coco_file_path] [coco_image_path] [voc_path]")
         else:
             merge_coco_to_voc_dataset(nargs[0],nargs[1],os.path.join(nargs[2],"Annotations"),os.path.join(nargs[2],"JPEGImages"),prefix=args.prefix)
     elif command == "merge-json-to-voc":
         if len(nargs) != 2:
             parser.print_help()
-            print("merge-json-to-voc [json_path] [voc_path]")
+            print("\n [--prefix xxx] merge-json-to-voc [json_path] [voc_path]")
         else:
             merge_json_dataset_to_voc_dataset(nargs[0],os.path.join(nargs[1],"Annotations"),os.path.join(nargs[1],"JPEGImages"),prefix=args.prefix)
     elif command == "merge-coco-to-json":
         if len(nargs) != 3:
             parser.print_help()
-            print("merge-coco-to-json [coco_file_path] [coco_image_path] [json_path]\n")
+            print("\n [--prefix xxx] merge-coco-to-json [coco_file_path] [coco_image_path] [json_path]")
         else:
             merge_coco_to_json_dataset(nargs[0],nargs[1],nargs[2],prefix=args.prefix)
     elif command == "merge-json-to-coco":
         if len(nargs) != 3:
             parser.print_help()
-            print("merge-json-to-coco [json_path] [coco_file_path] [coco_image_path]\n")
+            print("\n [--prefix xxx] merge-json-to-coco [json_path] [coco_file_path] [coco_image_path]\n")
         else:
             merge_json_to_coco_dataset(nargs[0],nargs[1],nargs[2],prefix=args.prefix)
     else:
