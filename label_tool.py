@@ -218,6 +218,7 @@ def get_dir_path_max_num(dir_path,prefix):
     if not os.path.exists(dir_path):
         os.mkdir(dir_path)
     max_num = 0
+    pbar = pyprind.ProgBar(len(dir_list), monitor=True,title="counting dir path on specified prefix {} number".format(prefix))
     for i in dir_list:
         res = gen_pattern.match(i)
         if res:
@@ -226,12 +227,14 @@ def get_dir_path_max_num(dir_path,prefix):
             num = int(res.groups()[1])
             if num > max_num:
                 max_num = num
+        pbar.update()
     return max_num
 
 def gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_image_path,prefix,args):
     src_list = os.listdir(voc_anno_path)
     max_num = get_dir_path_max_num(json_anno_path,prefix)
     name_list = []
+    pb = pyprind.ProgBar(len(src_list),monitor=True,title="counting src path specified prefix {} number".format(prefix))
     for one in src_list:
         res = gen_pattern.match(one)
         if res:
@@ -243,9 +246,10 @@ def gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_image_p
             new_anno_name = prefix + str(max_num)
             name_list.append(new_anno_name)
             map_path[new_anno_name] = one
+        pb.update()
     print("start to process %s picture"%len(name_list))
     global pbar
-    pbar = pyprind.ProgBar(len(name_list),monitor=True)
+    pbar = pyprind.ProgBar(len(name_list),monitor=True,title="converting".format(prefix))
     return name_list
 
 def merge_voc_dataset_to_json_dataset(voc_anno_path,voc_image_path,json_path,prefix="",args=None):
@@ -293,6 +297,7 @@ def get_exists_coco_max_num(coco_output_path,coco,prefix):
     coco["type"] =  old_coco.dataset.get('type', "instance")
     coco["categories"] =  old_coco.dataset.get('categories')
     ImgIDs = list(old_coco.imgs.keys())
+    pbar = pyprind.ProgBar(len(ImgIDs), monitor=True, title="counting exist coco specified prefix {} number".format(prefix))
     for ImgID in ImgIDs:
         coco["images"].extend(old_coco.loadImgs([ImgID]))
         global index
@@ -307,6 +312,7 @@ def get_exists_coco_max_num(coco_output_path,coco,prefix):
                 num = int(res.groups()[1])
                 if num > max_num:
                     max_num = num
+        pbar.update()
     return max_num
 
 def merge_voc_dataset_to_coco_dataset(voc_anno_path,voc_image_path,coco_output_path,coco_image_path,prefix="",args=None):
@@ -321,7 +327,7 @@ def merge_voc_dataset_to_coco_dataset(voc_anno_path,voc_image_path,coco_output_p
             coco["annotations"]=[]
     src_list = os.listdir(voc_anno_path)
     global pbar
-    pbar = pyprind.ProgBar(len(src_list),monitor=True,title="voc to coco")
+    pbar = pyprind.ProgBar(len(src_list),monitor=True,title="converting voc to coco")
     for one in src_list:
         if gen_pattern.match(one):
             max_num += 1
@@ -348,7 +354,7 @@ def merge_coco_to_voc_dataset(coco_file_path,coco_image_path,voc_anno_path,voc_i
     categories = coco.dataset.get('categories')
     ImgIDs = list(coco.imgs.keys())
     global pbar
-    pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="coco to voc")
+    pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="converting coco to voc")
     max_num = get_dir_path_max_num(voc_anno_path, prefix)
     for ImgID in ImgIDs:
         max_num += 1
@@ -382,7 +388,7 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
         f.write(json.dumps(meta_json_dict,indent=4, separators=(',', ':')))
     ImgIDs = list(coco.imgs.keys())
     global pbar
-    pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="coco to json")
+    pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="converting coco to json")
     max_num = get_dir_path_max_num(json_anno_path, prefix)
     if os.path.exists(os.path.join(json_path, "list.json")):
         with open(os.path.join(json_path, "list.json"), "r") as f:
@@ -398,8 +404,6 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
         json_dict["annotations"] = coco.loadAnns(coco.getAnnIds(imgIds=[ImgID]))
         with open(os.path.join(json_path, "images", "{}.json".format(new_image_id)), "w") as f:
             f.write(json.dumps(json_dict, indent=4, separators=(',', ':')))
-
-        # copy img file
         img_path = os.path.join(coco_image_path, json_dict["images"][0]["file_name"])
         if os.path.exists(img_path):
             if args and not args.ignore_image:
@@ -425,7 +429,7 @@ def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="
     with open(os.path.join(json_path, "list.json"), "r") as f:
         ImgIDs = json.load(f)["ImgIDs"]
     global pbar
-    pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="json to coco")
+    pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="converting json to coco")
     for ImgID in ImgIDs:
         max_num += 1
         new_image_id = prefix + str(max_num)
@@ -575,11 +579,13 @@ def remove_json_by_prefix(json_path,prefix=""):
     with open(os.path.join(json_path, "list.json"), "r") as f:
         ImgIDs = json.load(f)["ImgIDs"]
     new_images = ImgIDs.copy()
+    pbar = pyprind.ProgBar(len(ImgIDs), monitor=True, title="removing coco by prefix {}".format(prefix))
     for ImgID in ImgIDs:
         if str(ImgID).startswith(prefix):
             new_images.remove(ImgID)
             os.remove(os.path.join(json_anno_path,"{}.jpg".format(ImgID)))
             os.remove(os.path.join(json_anno_path,"{}.json".format(ImgID)))
+        pbar.update()
     with open(os.path.join(json_path, "list.json") , "w") as f:
         f.write(json.dumps({"ImgIDs":new_images},indent=4, separators=(',', ':')))
 
@@ -587,6 +593,7 @@ def remove_voc_by_prefix(voc_path,prefix=""):
     voc_anno_path = os.path.join(voc_path,"Annotations")
     voc_image_path = os.path.join(voc_path,"JPEGImages")
     src_list = os.listdir(voc_anno_path)
+    pbar = pyprind.ProgBar(len(src_list), monitor=True, title="removing coco by prefix {}".format(prefix))
     for i in src_list:
         if i.startswith(prefix):
             os.remove(os.path.join(voc_anno_path,i))
@@ -594,6 +601,7 @@ def remove_voc_by_prefix(voc_path,prefix=""):
             if res:
                 image_id = res.groups()[0]+res.groups()[1]
                 os.remove(os.path.join(voc_image_path, "{}.jpg".format(image_id)))
+        pbar.update()
 
 def remove_coco_by_prefix(coco_file_path,coco_image_path,prefix=""):
     coco = {"images": [], "annotations": []}
@@ -604,11 +612,13 @@ def remove_coco_by_prefix(coco_file_path,coco_image_path,prefix=""):
     coco["type"] = old_coco.dataset.get('type', "instance")
     coco["categories"] = old_coco.dataset.get('categories')
     ImgIDs = list(old_coco.imgs.keys())
+    pbar = pyprind.ProgBar(len(ImgIDs), monitor=True, title="removing coco by prefix {}".format(prefix))
     for ImgID in ImgIDs:
         if not str(ImgID).startswith(prefix):
             coco["images"].extend(old_coco.loadImgs([ImgID]))
         else:
             os.remove(os.path.join(coco_image_path, "{}.jpg".format(ImgID)))
+        pbar.update()
     with open(coco_file_path, "w") as f:
         f.write(json.dumps(coco, indent=4, separators=(',', ':')))
 
