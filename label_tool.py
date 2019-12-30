@@ -238,7 +238,7 @@ def gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_image_p
             max_num += 1
             image_id = one.split('.')[0]
             new_image_path =prefix+str(max_num)+".jpg"
-            if args and args.ignore_image:
+            if args and not args.ignore_image:
                 shutil.copyfile(os.path.join(voc_image_path,str(image_id)+".jpg"), os.path.join(json_image_path,new_image_path))
             new_anno_name = prefix + str(max_num)
             name_list.append(new_anno_name)
@@ -330,7 +330,7 @@ def merge_voc_dataset_to_coco_dataset(voc_anno_path,voc_image_path,coco_output_p
             json_dict = one_voc_format_to_json_format(voc_anno_path,one,new_image_id)
             coco["images"].extend(json_dict["images"])
             coco["annotations"].extend(json_dict["annotations"])
-            if args and args.ignore_image:
+            if args and not args.ignore_image:
                 shutil.copyfile(os.path.join(voc_image_path, str(image_id) + ".jpg"),os.path.join(coco_image_path,str(new_image_id)+".jpg"))
             pbar.update()
     with open(coco_output_path, "w") as f:
@@ -364,7 +364,7 @@ def merge_coco_to_voc_dataset(coco_file_path,coco_image_path,voc_anno_path,voc_i
         else:
             with open(dir_file, "w+") as f:
                 f.write(minidom.parseString(tostring(elem)).toprettyxml().replace('<?xml version="1.0" ?>\n', ""))
-            if args and args.ignore_image:
+            if args and not args.ignore_image:
                 shutil.copyfile(os.path.join(coco_image_path,old_image_name),os.path.join(voc_image_path,new_image_id+".jpg"))
         pbar.update()
 
@@ -402,7 +402,7 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
         # copy img file
         img_path = os.path.join(coco_image_path, json_dict["images"][0]["file_name"])
         if os.path.exists(img_path):
-            if args and args.ignore_image:
+            if args and not args.ignore_image:
                 shutil.copyfile(img_path, os.path.join(json_path, "images", "{}.jpg".format(new_image_id)))
         else:
             print("'{}' file does not exist.".format(img_path))
@@ -441,7 +441,7 @@ def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="
         coco["images"].extend(json_dict["images"])
         coco["annotations"].extend(json_dict["annotations"])
         source_path = os.path.join(json_path, 'images', "{}.jpg".format(ImgID))
-        if args and args.ignore_image:
+        if args and not args.ignore_image:
             shutil.copyfile(source_path, os.path.join(coco_image_path, "{}.jpg".format(new_image_id)))
         pbar.update()
     with open(coco_file_path, "w") as f:
