@@ -566,11 +566,14 @@ def remove_json_by_prefix(json_path,prefix=""):
     with open(os.path.join(json_path, "list.json"), "r") as f:
         ImgIDs = json.load(f)["ImgIDs"]
     new_images = ImgIDs.copy()
+    global pbar
+    pbar = pyprind.ProgBar(len(ImgIDs), title="remove voc")
     for ImgID in ImgIDs:
         if str(ImgID).startswith(prefix):
             new_images.remove(ImgID)
             os.remove(os.path.join(json_anno_path,"{}.jpg".format(ImgID)))
             os.remove(os.path.join(json_anno_path,"{}.json".format(ImgID)))
+        pbar.update()
     with open(os.path.join(json_path, "list.json") , "w") as f:
         f.write(json.dumps({"ImgIDs":new_images},indent=4, separators=(',', ':')))
 
@@ -578,6 +581,8 @@ def remove_voc_by_prefix(voc_path,prefix=""):
     voc_anno_path = os.path.join(voc_path,"Annotations")
     voc_image_path = os.path.join(voc_path,"JPEGImages")
     src_list = os.listdir(voc_anno_path)
+    global pbar
+    pbar = pyprind.ProgBar(len(src_list), title="remove voc")
     for i in src_list:
         if i.startswith(prefix):
             os.remove(os.path.join(voc_anno_path,i))
@@ -585,6 +590,7 @@ def remove_voc_by_prefix(voc_path,prefix=""):
             if res:
                 image_id = res.groups()[0]+res.groups()[1]
                 os.remove(os.path.join(voc_image_path, "{}.jpg".format(image_id)))
+        pbar.update()
 
 def remove_coco_by_prefix(coco_file_path,coco_image_path,prefix=""):
     coco = {"images": [], "annotations": []}
@@ -595,11 +601,14 @@ def remove_coco_by_prefix(coco_file_path,coco_image_path,prefix=""):
     coco["type"] = old_coco.dataset.get('type', "instance")
     coco["categories"] = old_coco.dataset.get('categories')
     ImgIDs = list(old_coco.imgs.keys())
+    global pbar
+    pbar = pyprind.ProgBar(len(ImgIDs), title="remove coco")
     for ImgID in ImgIDs:
         if not str(ImgID).startswith(prefix):
             coco["images"].extend(old_coco.loadImgs([ImgID]))
         else:
             os.remove(os.path.join(coco_image_path, "{}.jpg".format(ImgID)))
+        pbar.update()
     with open(coco_file_path, "w") as f:
         f.write(json.dumps(coco, indent=4, separators=(',', ':')))
 
@@ -635,8 +644,81 @@ def annotations_to_voc_xml_file(annotations,width,height,outputfilepath,override
         with open(outputfilepath, "w+") as f:
             f.write(minidom.parseString(tostring(elem)).toprettyxml().replace('<?xml version="1.0" ?>\n', ""))
 
+def count_voc_per_class_and_bbox_numbers(voc_path,prefix=""):
+    dir_path = os.path.join(voc_path,"Annotations")
+    dir_list = os.listdir(dir_path)
+    details = {}
+    global pbar
+    pbar = pyprind.ProgBar(len(dir_list),title="counting voc")
+    for i in dir_list:
+        res = gen_pattern.match(i)
+        if res:
+            if res.groups()[0] != prefix:
+                pbar.update()
+                continue
+            json_dict = one_voc_format_to_json_format(dir_path,i, res.groups()[0]+res.groups()[1])
+            for one in json_dict.get("annotations"):
+                details.setdefault(one["category_id"], {"image_counts":set(), "bbox_count": 0})
+                details[one["category_id"]]["bbox_count"] += 1
+                details[one["category_id"]]["image_counts"].add(one["image_id"])
+        pbar.update()
+    for k,v in details.items():
+        details[k]["image_counts"]=len(details[k]["image_counts"])
+    for j in sorted(details.items(),key=lambda x:x[0]):
+        print(j)
 
-def run_command(args, command, nargs, parser ):
+def count_json_per_class_and_bbox_numbers(json_path,prefix=""):
+    dir_path = os.path.join(json_path,"images")
+    dir_list = os.listdir(dir_path)
+    details = {}
+    global pbar
+    pbar = pyprind.ProgBar(len(dir_list),title="counting json")
+    for i in dir_list:
+        res = gen_pattern.match(i)
+        if res:
+            if res.groups()[0] != prefix:
+                pbar.update()
+                continue
+            with open(os.path.join(dir_path,i),'r') as f:
+                json_dict = json.load(f)
+            for one in json_dict.get("annotations"):
+                details.setdefault(one["category_id"], {"image_counts":set(), "bbox_count": 0})
+                details[one["category_id"]]["bbox_count"] += 1
+                details[one["category_id"]]["image_counts"].add(one["image_id"])
+        pbar.update()
+    for k,v in details.items():
+        details[k]["image_counts"]=len(details[k]["image_counts"])
+    for j in sorted(details.items(),key=lambda x:x[0]):
+        print(j)
+
+def count_coco_per_class_and_bbox_numbers(coco_file_path,prefix=""):
+    details = {}
+    global pbar
+    coco = COCO(coco_file_path)
+    ImgIDs = list(coco.imgs.keys())
+    global pbar
+    pbar = pyprind.ProgBar(len(ImgIDs),title="counting coco")
+    for ImgID in ImgIDs:
+        json_dict = {}
+        json_dict["images"] = coco.loadImgs([ImgID])
+        json_dict["annotations"] = coco.loadAnns(coco.getAnnIds(imgIds=[ImgID]))
+        image_name = get_file_name_from_coco(json_dict["images"], ImgID)
+        res = gen_pattern.match(image_name)
+        if res:
+            if res.groups()[0] != prefix:
+                pbar.update()
+                continue
+        for one in json_dict.get("annotations"):
+            details.setdefault(one["category_id"], {"image_counts":set(), "bbox_count": 0})
+            details[one["category_id"]]["bbox_count"] += 1
+            details[one["category_id"]]["image_counts"].add(one["image_id"])
+        pbar.update()
+    for k,v in details.items():
+        details[k]["image_counts"]=len(details[k]["image_counts"])
+    for j in sorted(details.items(),key=lambda x:x[0]):
+        print(j)
+
+def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
         if len(nargs) != 2:
             parser.print_help()
@@ -727,6 +809,24 @@ def run_command(args, command, nargs, parser ):
             print("\n [--prefix xxx] merge-json-to-coco [json_path] [coco_file_path] [coco_image_path]\n")
         else:
             merge_json_to_coco_dataset(nargs[0],nargs[1],nargs[2],prefix=args.prefix)
+    elif command == "count-voc":
+        if len(nargs) != 1:
+            parser.print_help()
+            print("\n [--prefix xxx] count-voc [voc_path]\n")
+        else:
+            count_voc_per_class_and_bbox_numbers(nargs[0],prefix=args.prefix)
+    elif command == "count-json":
+        if len(nargs) != 1:
+            parser.print_help()
+            print("\n [--prefix xxx] count-json [json_path]\n")
+        else:
+            count_json_per_class_and_bbox_numbers(nargs[0],prefix=args.prefix)
+    elif command == "count-coco":
+        if len(nargs) != 1:
+            parser.print_help()
+            print("\n [--prefix xxx] count-coco [coco_file_path]\n")
+        else:
+            count_coco_per_class_and_bbox_numbers(nargs[0],prefix=args.prefix)
     else:
         parser.print_help()
 
