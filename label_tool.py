@@ -603,6 +603,39 @@ def remove_coco_by_prefix(coco_file_path,coco_image_path,prefix=""):
     with open(coco_file_path, "w") as f:
         f.write(json.dumps(coco, indent=4, separators=(',', ':')))
 
+def annotations_to_voc_xml_file(annotations,width,height,outputfilepath,override=False):
+    dir_path,filename = outputfilepath.rsplit("/",1)
+    image_name = filename.split(".")[0]+".jpg"
+    image_path = os.path.join(dir_path,image_name)
+    elem = Element("annotation")
+    add_xml_element(elem, "folder", dir_path.split("/")[-1])
+    add_xml_element(elem, "filename", image_name)
+    add_xml_element(elem, "path", image_path)
+    add_xml_element(elem, ["source", "database"], "Unkonwn")
+    add_xml_element(elem, ["size", "height"], height)
+    add_xml_element(elem, ["size", "width"], width)
+    add_xml_element(elem, ["size", "depth"], 3)
+    add_xml_element(elem, "segmented", 0)
+    for annotaton in annotations:
+        label,xmin,ymin,xmax,ymax = annotaton
+        add_xml_element(elem, ["object", "name"], label, True)
+        add_xml_element(elem, ["object", "pose"], "Unspecified")
+        add_xml_element(elem, ["object", "truncated"], 0)
+        add_xml_element(elem, ["object", "difficult"], 0)
+        add_xml_element(elem, ["object", "bndbox", "xmin"], xmin)
+        add_xml_element(elem, ["object", "bndbox", "ymin"], ymin)
+        add_xml_element(elem, ["object", "bndbox", "xmax"], xmax)
+        add_xml_element(elem, ["object", "bndbox", "ymax"], ymax)
+    if os.path.exists(outputfilepath):
+        if override:
+            with open(outputfilepath, "w+") as f:
+                f.write(minidom.parseString(tostring(elem)).toprettyxml().replace('<?xml version="1.0" ?>\n', ""))
+    else:
+        os.makedirs(dir_path,exist_ok=True)
+        with open(outputfilepath, "w+") as f:
+            f.write(minidom.parseString(tostring(elem)).toprettyxml().replace('<?xml version="1.0" ?>\n', ""))
+
+
 def run_command(args, command, nargs, parser ):
     if command == "json-to-voc":
         if len(nargs) != 2:
