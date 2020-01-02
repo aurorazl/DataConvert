@@ -662,19 +662,19 @@ def count_voc_per_class_and_bbox_numbers(voc_path,prefix=""):
         with open(train_path,"r") as f:
             tmp=[]
             for i in f:
-                tmp.append(i.strip())
+                tmp.append(i.strip()+".xml")
         count_file_list(tmp,dir_path,prefix)
     if os.path.exists(val_path):
         with open(val_path,"r") as f:
             tmp=[]
             for i in f:
-                tmp.append(i.strip())
+                tmp.append(i.strip()+".xml")
         count_file_list(tmp,dir_path,prefix)
     if os.path.exists(test_path):
         with open(test_path,"r") as f:
             tmp=[]
             for i in f:
-                tmp.append(i.strip())
+                tmp.append(i.strip()+".xml")
         count_file_list(tmp,dir_path,prefix)
     if not os.path.exists(train_path) and not os.path.exists(val_path) and not os.path.exists(test_path):
         dir_list = os.listdir(dir_path)
