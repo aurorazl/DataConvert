@@ -688,7 +688,7 @@ def count_file_list(file_name_list,dir_path,prefix,title):
     for i in file_name_list:
         res = gen_pattern.match(i)
         if res:
-            if res.groups()[0] != prefix:
+            if prefix and  res.groups()[0] != prefix:
                 pbar.update()
                 continue
             total_count += 1
@@ -701,7 +701,7 @@ def count_file_list(file_name_list,dir_path,prefix,title):
     for k,v in details.items():
         details[k]["image_counts"]=len(details[k]["image_counts"])
     for j in sorted(details.items(),key=lambda x:x[0]):
-        print(get_class_name(j[0]),j[1])
+        print('{:<20s} {}'.format(get_class_name(j[0]),json.dumps(j[1])))
     print("total images count:",total_count)
 
 def count_json_per_class_and_bbox_numbers(json_path,prefix=""):
@@ -713,7 +713,7 @@ def count_json_per_class_and_bbox_numbers(json_path,prefix=""):
     for i in dir_list:
         res = gen_pattern.match(i)
         if res:
-            if res.groups()[0] != prefix:
+            if prefix and res.groups()[0] != prefix:
                 pbar.update()
                 continue
             with open(os.path.join(dir_path,i),'r') as f:
@@ -726,7 +726,7 @@ def count_json_per_class_and_bbox_numbers(json_path,prefix=""):
     for k,v in details.items():
         details[k]["image_counts"]=len(details[k]["image_counts"])
     for j in sorted(details.items(),key=lambda x:x[0]):
-        print(get_class_name(j[0]),j[1])
+        print('{:<20s} {}'.format(get_class_name(j[0]),json.dumps(j[1])))
 
 def count_coco_per_class_and_bbox_numbers(coco_file_path,prefix=""):
     details = {}
@@ -742,7 +742,7 @@ def count_coco_per_class_and_bbox_numbers(coco_file_path,prefix=""):
         image_name = get_file_name_from_coco(json_dict["images"], ImgID)
         res = gen_pattern.match(image_name)
         if res:
-            if res.groups()[0] != prefix:
+            if prefix and res.groups()[0] != prefix:
                 pbar.update()
                 continue
         for one in json_dict.get("annotations"):
@@ -753,7 +753,7 @@ def count_coco_per_class_and_bbox_numbers(coco_file_path,prefix=""):
     for k,v in details.items():
         details[k]["image_counts"]=len(details[k]["image_counts"])
     for j in sorted(details.items(),key=lambda x:x[0]):
-        print(get_class_name(j[0]),j[1])
+        print('{:<20s} {}'.format(get_class_name(j[0]),json.dumps(j[1])))
 
 def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
