@@ -663,28 +663,28 @@ def count_voc_per_class_and_bbox_numbers(voc_path,prefix=""):
             tmp=[]
             for i in f:
                 tmp.append(i.strip()+".xml")
-        count_file_list(tmp,dir_path,prefix)
+        count_file_list(tmp,dir_path,prefix,"counting voc train set")
     if os.path.exists(val_path):
         with open(val_path,"r") as f:
             tmp=[]
             for i in f:
                 tmp.append(i.strip()+".xml")
-        count_file_list(tmp,dir_path,prefix)
+        count_file_list(tmp,dir_path,prefix,"counting voc val set")
     if os.path.exists(test_path):
         with open(test_path,"r") as f:
             tmp=[]
             for i in f:
                 tmp.append(i.strip()+".xml")
-        count_file_list(tmp,dir_path,prefix)
+        count_file_list(tmp,dir_path,prefix,"counting voc test set")
     if not os.path.exists(train_path) and not os.path.exists(val_path) and not os.path.exists(test_path):
         dir_list = os.listdir(dir_path)
-        count_file_list(dir_list, dir_path, prefix)
+        count_file_list(dir_list, dir_path, prefix,"counting voc all set")
 
-def count_file_list(file_name_list,dir_path,prefix):
+def count_file_list(file_name_list,dir_path,prefix,title):
     details = {}
     global pbar
     total_count = 0
-    pbar = pyprind.ProgBar(len(file_name_list),title="counting voc")
+    pbar = pyprind.ProgBar(len(file_name_list),title=title)
     for i in file_name_list:
         res = gen_pattern.match(i)
         if res:
