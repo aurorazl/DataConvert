@@ -61,7 +61,7 @@ def get_class_name(number,categories=None):
     return name
 
 def get_image_prefix(filename):
-    query = filename.split(".")[0]
+    query = os.path.splitext(filename)[0]
     return query
 
 def get_node_or_create(elem,key,new):
@@ -175,7 +175,7 @@ def one_json_format_to_voc_format(coco_dict,new_image_name,dir_path,categories=N
     filename = coco_dict.get("images")[0].get("file_name")
     height = coco_dict.get("images")[0].get("height")
     width = coco_dict.get("images")[0].get("width")
-    add_xml_element(elem, "folder", dir_path.split("/")[-1])
+    add_xml_element(elem, "folder", os.path.basename(dir_path))
     add_xml_element(elem, "filename", new_image_name)
     add_xml_element(elem, "path", os.path.join(dir_path,new_image_name))
     add_xml_element(elem, ["source", "database"], "Unkonwn")
@@ -239,7 +239,7 @@ def gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_image_p
         res = gen_pattern.match(one)
         if res:
             max_num += 1
-            image_id = one.split('.')[0]
+            image_id = os.path.splitext(one)
             new_image_path =prefix+str(max_num)+".jpg"
             if args and not args.ignore_image:
                 shutil.copyfile(os.path.join(voc_image_path,str(image_id)+".jpg"), os.path.join(json_image_path,new_image_path))
@@ -331,7 +331,7 @@ def merge_voc_dataset_to_coco_dataset(voc_anno_path,voc_image_path,coco_output_p
     for one in src_list:
         if gen_pattern.match(one):
             max_num += 1
-            image_id = one.split('.')[0]
+            image_id = os.path.splitext(one)
             new_image_id = prefix+str(max_num)
             json_dict = one_voc_format_to_json_format(voc_anno_path,one,new_image_id)
             coco["images"].extend(json_dict["images"])
