@@ -621,12 +621,18 @@ def remove_coco_by_prefix(coco_file_path,coco_image_path,prefix=""):
     with open(coco_file_path, "w") as f:
         f.write(json.dumps(coco, indent=4, separators=(',', ':')))
 
-def annotations_to_voc_xml_file(annotations,width,height,outputfilepath,override=False):
-    dir_path,filename = outputfilepath.rsplit("/",1)
-    image_name = filename.split(".")[0]+".jpg"
-    image_path = os.path.join(dir_path,image_name)
+def annotations_to_voc_xml_file(annotations,width,height,outputfilepath,override=False,privacy_mode=True):
+    dir_path = os.path.dirname(outputfilepath)
+    xml_name = os.path.basename(outputfilepath)
+    image_name = os.path.splitext(xml_name)[0] + ".jpg"
+    image_path = os.path.join(dir_path, image_name)
+    image_folder = os.path.join(dir_path, 'JPEGImages')
+    if privacy_mode:
+        image_path = image_name
+        image_folder = 'folder'
+
     elem = Element("annotation")
-    add_xml_element(elem, "folder", dir_path.split("/")[-1])
+    add_xml_element(elem, "folder", image_folder)
     add_xml_element(elem, "filename", image_name)
     add_xml_element(elem, "path", image_path)
     add_xml_element(elem, ["source", "database"], "Unkonwn")
