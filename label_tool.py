@@ -12,6 +12,7 @@ from xml.etree.ElementTree import Element
 from xml.etree.ElementTree import tostring
 from pycocotools.coco import COCO
 from xml.dom import minidom
+from DirectoryUtils import cd
 
 filename_pattern = re.compile(r"(\S+)\.(xml|json)")
 gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json)")
@@ -776,6 +777,23 @@ def count_coco_per_class_and_bbox_numbers(coco_file_path,prefix=""):
         details[k]["image_counts"]=len(details[k]["image_counts"])
     for j in sorted(details.items(),key=lambda x:x[0]):
         print('{:<20s} {}'.format(get_class_name(j[0]),json.dumps(j[1])))
+
+
+def remove_image_zero_prefix(image_path):
+    if not os.path.exists(image_path):
+        return
+    pattern = re.compile(r"0*([1-9]\d*.jpg)")
+    with cd(image_path):
+        global pbar
+        dir_list = os.listdir(image_path)
+        pbar = pyprind.ProgBar(len(dir_list), title="counting coco")
+        for one in dir_list:
+            ret = pattern.match(one)
+            if ret:
+                new_image_path = ret.groups()[0]
+                os.rename(one,new_image_path)
+            pbar.update()
+
 
 def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
