@@ -910,6 +910,12 @@ def run_command(args, command, nargs, parser):
             print("\n [--prefix xxx] count-coco [coco_file_path]\n")
         else:
             count_coco_per_class_and_bbox_numbers(nargs[0],prefix=args.prefix)
+    elif command == "remove_image_zero_prefix":
+        if len(nargs) != 1:
+            parser.print_help()
+            print("\n remove_image_zero_prefix [image_path]\n")
+        else:
+            remove_image_zero_prefix(nargs[0])
     else:
         parser.print_help()
 
