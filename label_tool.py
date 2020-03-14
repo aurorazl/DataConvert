@@ -61,7 +61,7 @@ def get_class_name(number,categories=None):
     return name
 
 def get_image_prefix(filename):
-    query = filename.split(".")[0]
+    query = os.path.splitext(filename)[0]
     return query
 
 def get_node_or_create(elem,key,new):
@@ -175,7 +175,7 @@ def one_json_format_to_voc_format(coco_dict,new_image_name,dir_path,categories=N
     filename = coco_dict.get("images")[0].get("file_name")
     height = coco_dict.get("images")[0].get("height")
     width = coco_dict.get("images")[0].get("width")
-    add_xml_element(elem, "folder", dir_path.split("/")[-1])
+    add_xml_element(elem, "folder", os.path.basename(dir_path))
     add_xml_element(elem, "filename", new_image_name)
     add_xml_element(elem, "path", os.path.join(dir_path,new_image_name))
     add_xml_element(elem, ["source", "database"], "Unkonwn")
@@ -238,7 +238,7 @@ def gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_image_p
     for one in src_list:
         res = gen_pattern.match(one)
         if res:
-            image_id = one.split('.')[0]
+            image_id = os.path.splitext(one)
             if not prefix and max_num==0:
                 new_image_id = str(image_id)
             else:
@@ -334,7 +334,7 @@ def merge_voc_dataset_to_coco_dataset(voc_anno_path,voc_image_path,coco_output_p
     pbar = pyprind.ProgBar(len(src_list),monitor=True,title="converting voc to coco")
     for one in src_list:
         if gen_pattern.match(one):
-            image_id = one.split('.')[0]
+            image_id = os.path.splitext(one)
             if not prefix and max_num==0:
                 new_image_id = image_id
             else:
@@ -621,7 +621,6 @@ def remove_voc_by_prefix(voc_path,prefix=""):
 
 def remove_coco_by_prefix(coco_file_path,coco_image_path,prefix=""):
     coco = {"images": [], "annotations": []}
-    print(os.path.exists(coco_file_path))
     old_coco = COCO(coco_file_path)
     coco["info"] = old_coco.dataset.get('info', [])
     coco["licenses"] = old_coco.dataset.get('licenses', [])
@@ -638,7 +637,147 @@ def remove_coco_by_prefix(coco_file_path,coco_image_path,prefix=""):
     with open(coco_file_path, "w") as f:
         f.write(json.dumps(coco, indent=4, separators=(',', ':')))
 
-def run_command(args, command, nargs, parser ):
+def annotations_to_voc_xml_file(annotations,width,height,outputfilepath,override=False,privacy_mode=True):
+    dir_path = os.path.dirname(outputfilepath)
+    xml_name = os.path.basename(outputfilepath)
+    image_name = os.path.splitext(xml_name)[0] + ".jpg"
+    image_path = os.path.join(dir_path, image_name)
+    image_folder = os.path.join(dir_path, 'JPEGImages')
+    if privacy_mode:
+        image_path = image_name
+        image_folder = 'folder'
+
+    elem = Element("annotation")
+    add_xml_element(elem, "folder", image_folder)
+    add_xml_element(elem, "filename", image_name)
+    add_xml_element(elem, "path", image_path)
+    add_xml_element(elem, ["source", "database"], "Unkonwn")
+    add_xml_element(elem, ["size", "height"], height)
+    add_xml_element(elem, ["size", "width"], width)
+    add_xml_element(elem, ["size", "depth"], 3)
+    add_xml_element(elem, "segmented", 0)
+    for annotaton in annotations:
+        label,xmin,ymin,xmax,ymax = annotaton
+        add_xml_element(elem, ["object", "name"], label, True)
+        add_xml_element(elem, ["object", "pose"], "Unspecified")
+        add_xml_element(elem, ["object", "truncated"], 0)
+        add_xml_element(elem, ["object", "difficult"], 0)
+        add_xml_element(elem, ["object", "bndbox", "xmin"], xmin)
+        add_xml_element(elem, ["object", "bndbox", "ymin"], ymin)
+        add_xml_element(elem, ["object", "bndbox", "xmax"], xmax)
+        add_xml_element(elem, ["object", "bndbox", "ymax"], ymax)
+    if os.path.exists(outputfilepath):
+        if override:
+            with open(outputfilepath, "w+") as f:
+                f.write(minidom.parseString(tostring(elem)).toprettyxml().replace('<?xml version="1.0" ?>\n', ""))
+    else:
+        os.makedirs(dir_path,exist_ok=True)
+        with open(outputfilepath, "w+") as f:
+            f.write(minidom.parseString(tostring(elem)).toprettyxml().replace('<?xml version="1.0" ?>\n', ""))
+
+def count_voc_per_class_and_bbox_numbers(voc_path,prefix=""):
+    dir_path = os.path.join(voc_path,"Annotations")
+    train_path = os.path.join(voc_path,"ImageSets","Main","train.txt")
+    val_path = os.path.join(voc_path,"ImageSets","Main","val.txt")
+    test_path = os.path.join(voc_path,"ImageSets","Main","test.txt")
+    if os.path.exists(train_path):
+        with open(train_path,"r") as f:
+            tmp=[]
+            for i in f:
+                tmp.append(i.strip()+".xml")
+        count_file_list(tmp,dir_path,prefix,"counting voc train set")
+    if os.path.exists(val_path):
+        with open(val_path,"r") as f:
+            tmp=[]
+            for i in f:
+                tmp.append(i.strip()+".xml")
+        count_file_list(tmp,dir_path,prefix,"counting voc val set")
+    if os.path.exists(test_path):
+        with open(test_path,"r") as f:
+            tmp=[]
+            for i in f:
+                tmp.append(i.strip()+".xml")
+        count_file_list(tmp,dir_path,prefix,"counting voc test set")
+    if not os.path.exists(train_path) and not os.path.exists(val_path) and not os.path.exists(test_path):
+        dir_list = os.listdir(dir_path)
+        count_file_list(dir_list, dir_path, prefix,"counting voc all set")
+
+def count_file_list(file_name_list,dir_path,prefix,title):
+    details = {}
+    global pbar
+    total_count = 0
+    pbar = pyprind.ProgBar(len(file_name_list),title=title)
+    for i in file_name_list:
+        res = gen_pattern.match(i)
+        if res:
+            if prefix and  res.groups()[0] != prefix:
+                pbar.update()
+                continue
+            total_count += 1
+            json_dict = one_voc_format_to_json_format(dir_path,i, res.groups()[0]+res.groups()[1])
+            for one in json_dict.get("annotations"):
+                details.setdefault(one["category_id"], {"image_counts":set(), "bbox_count": 0})
+                details[one["category_id"]]["bbox_count"] += 1
+                details[one["category_id"]]["image_counts"].add(one["image_id"])
+        pbar.update()
+    for k,v in details.items():
+        details[k]["image_counts"]=len(details[k]["image_counts"])
+    for j in sorted(details.items(),key=lambda x:x[0]):
+        print('{:<20s} {}'.format(get_class_name(j[0]),json.dumps(j[1])))
+    print("total images count:",total_count)
+
+def count_json_per_class_and_bbox_numbers(json_path,prefix=""):
+    dir_path = os.path.join(json_path,"images")
+    dir_list = os.listdir(dir_path)
+    details = {}
+    global pbar
+    pbar = pyprind.ProgBar(len(dir_list),title="counting json")
+    for i in dir_list:
+        res = gen_pattern.match(i)
+        if res:
+            if prefix and res.groups()[0] != prefix:
+                pbar.update()
+                continue
+            with open(os.path.join(dir_path,i),'r') as f:
+                json_dict = json.load(f)
+            for one in json_dict.get("annotations"):
+                details.setdefault(one["category_id"], {"image_counts":set(), "bbox_count": 0})
+                details[one["category_id"]]["bbox_count"] += 1
+                details[one["category_id"]]["image_counts"].add(one["image_id"])
+        pbar.update()
+    for k,v in details.items():
+        details[k]["image_counts"]=len(details[k]["image_counts"])
+    for j in sorted(details.items(),key=lambda x:x[0]):
+        print('{:<20s} {}'.format(get_class_name(j[0]),json.dumps(j[1])))
+
+def count_coco_per_class_and_bbox_numbers(coco_file_path,prefix=""):
+    details = {}
+    global pbar
+    coco = COCO(coco_file_path)
+    ImgIDs = list(coco.imgs.keys())
+    global pbar
+    pbar = pyprind.ProgBar(len(ImgIDs),title="counting coco")
+    for ImgID in ImgIDs:
+        json_dict = {}
+        json_dict["images"] = coco.loadImgs([ImgID])
+        json_dict["annotations"] = coco.loadAnns(coco.getAnnIds(imgIds=[ImgID]))
+        image_name = get_file_name_from_coco(json_dict["images"], ImgID)
+        res = gen_pattern.match(image_name)
+        if res:
+            if prefix and res.groups()[0] != prefix:
+                pbar.update()
+                continue
+        for one in json_dict.get("annotations"):
+            details.setdefault(one["category_id"], {"image_counts":set(), "bbox_count": 0})
+            details[one["category_id"]]["bbox_count"] += 1
+            details[one["category_id"]]["image_counts"].add(one["image_id"])
+        pbar.update()
+    for k,v in details.items():
+        details[k]["image_counts"]=len(details[k]["image_counts"])
+    for j in sorted(details.items(),key=lambda x:x[0]):
+        print('{:<20s} {}'.format(get_class_name(j[0]),json.dumps(j[1])))
+
+def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
         if len(nargs) != 2:
             parser.print_help()
@@ -735,6 +874,24 @@ def run_command(args, command, nargs, parser ):
         else:
             check_path_exit_or_raise_exception(nargs[0])
             merge_json_to_coco_dataset(nargs[0],nargs[1],nargs[2],prefix=args.prefix,args=args)
+    elif command == "count-voc":
+        if len(nargs) != 1:
+            parser.print_help()
+            print("\n [--prefix xxx] count-voc [voc_path]\n")
+        else:
+            count_voc_per_class_and_bbox_numbers(nargs[0],prefix=args.prefix)
+    elif command == "count-json":
+        if len(nargs) != 1:
+            parser.print_help()
+            print("\n [--prefix xxx] count-json [json_path]\n")
+        else:
+            count_json_per_class_and_bbox_numbers(nargs[0],prefix=args.prefix)
+    elif command == "count-coco":
+        if len(nargs) != 1:
+            parser.print_help()
+            print("\n [--prefix xxx] count-coco [coco_file_path]\n")
+        else:
+            count_coco_per_class_and_bbox_numbers(nargs[0],prefix=args.prefix)
     else:
         parser.print_help()
 
