@@ -1,0 +1,5 @@
+pyprind
+Cython
+numpy
+pycocotools
+matplotlib

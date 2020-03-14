@@ -786,7 +786,7 @@ def remove_image_zero_prefix(image_path):
     with cd(image_path):
         global pbar
         dir_list = os.listdir(image_path)
-        pbar = pyprind.ProgBar(len(dir_list), title="counting coco")
+        pbar = pyprind.ProgBar(len(dir_list), title="remving 0 prefix")
         for one in dir_list:
             ret = pattern.match(one)
             if ret:
