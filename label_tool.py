@@ -238,9 +238,13 @@ def gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_image_p
     for one in src_list:
         res = gen_pattern.match(one)
         if res:
-            max_num += 1
             image_id = one.split('.')[0]
-            new_image_path =prefix+str(max_num)+".jpg"
+            if not prefix and max_num==0:
+                new_image_id = str(image_id)
+            else:
+                max_num += 1
+                new_image_id = prefix+str(max_num)
+            new_image_path = new_image_id +".jpg"
             if args and not args.ignore_image:
                 shutil.copyfile(os.path.join(voc_image_path,str(image_id)+".jpg"), os.path.join(json_image_path,new_image_path))
             new_anno_name = prefix + str(max_num)
@@ -330,9 +334,12 @@ def merge_voc_dataset_to_coco_dataset(voc_anno_path,voc_image_path,coco_output_p
     pbar = pyprind.ProgBar(len(src_list),monitor=True,title="converting voc to coco")
     for one in src_list:
         if gen_pattern.match(one):
-            max_num += 1
             image_id = one.split('.')[0]
-            new_image_id = prefix+str(max_num)
+            if not prefix and max_num==0:
+                new_image_id = image_id
+            else:
+                max_num += 1
+                new_image_id = prefix+str(max_num)
             json_dict = one_voc_format_to_json_format(voc_anno_path,one,new_image_id)
             coco["images"].extend(json_dict["images"])
             coco["annotations"].extend(json_dict["annotations"])
@@ -357,8 +364,11 @@ def merge_coco_to_voc_dataset(coco_file_path,coco_image_path,voc_anno_path,voc_i
     pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="converting coco to voc")
     max_num = get_dir_path_max_num(voc_anno_path, prefix)
     for ImgID in ImgIDs:
-        max_num += 1
-        new_image_id = prefix+str(max_num)
+        if not prefix and max_num==0:
+            new_image_id = ImgID
+        else:
+            max_num += 1
+            new_image_id = prefix+str(max_num)
         json_dict = {}
         json_dict["images"] = coco.loadImgs([ImgID])
         json_dict["annotations"] = coco.loadAnns(coco.getAnnIds(imgIds=[ImgID]))
@@ -396,8 +406,11 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
     else:
         new_image_id_list = []
     for ImgID in ImgIDs:
-        max_num += 1
-        new_image_id = prefix + str(max_num)
+        if max_num==0 and not prefix:
+            new_image_id = ImgID
+        else:
+            max_num += 1
+            new_image_id = prefix + str(max_num)
         new_image_id_list.append(new_image_id)
         json_dict = {}
         json_dict["images"] = coco.loadImgs([ImgID])
@@ -405,11 +418,11 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
         with open(os.path.join(json_path, "images", "{}.json".format(new_image_id)), "w") as f:
             f.write(json.dumps(json_dict, indent=4, separators=(',', ':')))
         img_path = os.path.join(coco_image_path, json_dict["images"][0]["file_name"])
-        if os.path.exists(img_path):
-            if args and not args.ignore_image:
+        if args and not args.ignore_image:
+            if os.path.exists(img_path):
                 shutil.copyfile(img_path, os.path.join(json_path, "images", "{}.jpg".format(new_image_id)))
-        else:
-            print("'{}' file does not exist.".format(img_path))
+            else:
+                print("'{}' file does not exist.".format(img_path))
         pbar.update()
     with open(os.path.join(json_path, "list.json") , "w") as f:
         f.write(json.dumps({"ImgIDs":new_image_id_list},indent=4, separators=(',', ':')))
@@ -431,8 +444,11 @@ def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="
     global pbar
     pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="converting json to coco")
     for ImgID in ImgIDs:
-        max_num += 1
-        new_image_id = prefix + str(max_num)
+        if not prefix and max_num==0:
+            new_image_id = ImgID
+        else:
+            max_num += 1
+            new_image_id = prefix + str(max_num)
         with open(os.path.join(json_path, 'images', "{}.json".format(ImgID)), "r") as f:
             json_dict = json.load(f)
         json_dict["images"][0]["file_name"] = "{}.jpg".format(new_image_id)
