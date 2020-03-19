@@ -13,6 +13,7 @@ from xml.etree.ElementTree import tostring
 from pycocotools.coco import COCO
 from xml.dom import minidom
 from DirectoryUtils import cd
+import collections
 
 filename_pattern = re.compile(r"(\S+)\.(xml|json)")
 gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json)")
@@ -794,6 +795,34 @@ def remove_image_zero_prefix(image_path):
                 os.rename(one,new_image_path)
             pbar.update()
 
+def generate_commit_json(json_path,userId):
+    with open(os.path.join(json_path, "list.json"), "r") as f:
+        ImgIDs = json.load(f)["ImgIDs"]
+    global pbar
+    commit_json = collections.defaultdict(lambda :{"status":"committed","userId":userId,"categoryIds":[]})
+    pbar = pyprind.ProgBar(len(ImgIDs), monitor=True, title="generate commit json")
+    json_file_path = os.path.join(json_path,"images")
+    for ImgID in ImgIDs:
+        with open(os.path.join(json_file_path, "{}.json".format(ImgID)), "r") as f:
+            json_dict = json.load(f)
+        for i in json_dict["annotations"]:
+            if i["category_id"] not in commit_json[i["image_id"]]["categoryIds"]:
+                commit_json[i["image_id"]]["categoryIds"].append(i["category_id"])
+        pbar.update()
+    with open(os.path.join(json_path, "commit.json"), "w") as f:
+        f.write(json.dumps(commit_json, indent=4, separators=(',', ':')))
+
+def check_coco_image_whether_duplicate(coco_file_path):
+    coco = COCO(coco_file_path)
+    ImgIDs = list(coco.imgs.keys())
+    global pbar
+    pbar = pyprind.ProgBar(len(ImgIDs), monitor=True, title="generate commit json")
+    already = set()
+    for one in ImgIDs:
+        if one in already:
+            print("warning! {} already exists!".format(one))
+        already.add(one)
+        pbar.update()
 
 def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
@@ -916,6 +945,18 @@ def run_command(args, command, nargs, parser):
             print("\n remove_image_zero_prefix [image_path]\n")
         else:
             remove_image_zero_prefix(nargs[0])
+    elif command == "generate_commit_json":
+        if len(nargs)!=2:
+            parser.print_help()
+            print("\n generate_commit_json [json_path] [userId]\n")
+        else:
+            generate_commit_json(nargs[0],nargs[1])
+    elif command == "check_coco_image_whether_duplicate":
+        if len(nargs)!=1:
+            parser.print_help()
+            print("\n check_coco_image_whether_duplicate [cooc_file_path]\n")
+        else:
+            check_coco_image_whether_duplicate(nargs[0])
     else:
         parser.print_help()
 
