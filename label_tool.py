@@ -367,7 +367,7 @@ def merge_coco_to_voc_dataset(coco_file_path,coco_image_path,voc_anno_path,voc_i
     max_num = get_dir_path_max_num(voc_anno_path, prefix)
     for ImgID in ImgIDs:
         if not prefix and max_num==0:
-            new_image_id = ImgID
+            new_image_id = str(ImgID)
         else:
             max_num += 1
             new_image_id = prefix+str(max_num)
@@ -377,7 +377,7 @@ def merge_coco_to_voc_dataset(coco_file_path,coco_image_path,voc_anno_path,voc_i
         old_image_name = get_file_name_from_coco(json_dict["images"], ImgID)
         elem = one_json_format_to_voc_format(json_dict, new_image_id + ".jpg",voc_image_path,categories)
         dir_file = os.path.join(voc_anno_path, new_image_id + ".xml")
-        if not os.path.exists(os.path.join(coco_image_path,old_image_name)):
+        if not os.path.exists(os.path.join(coco_image_path,old_image_name)) and not args.ignore_image:
             print(os.path.join(coco_image_path,old_image_name),"not exists")
         else:
             with open(dir_file, "w+") as f:
@@ -409,7 +409,7 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
         new_image_id_list = []
     for ImgID in ImgIDs:
         if max_num==0 and not prefix:
-            new_image_id = ImgID
+            new_image_id = str(ImgID)
         else:
             max_num += 1
             new_image_id = prefix + str(max_num)
@@ -447,7 +447,7 @@ def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="
     pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="converting json to coco")
     for ImgID in ImgIDs:
         if not prefix and max_num==0:
-            new_image_id = ImgID
+            new_image_id = str(ImgID)
         else:
             max_num += 1
             new_image_id = prefix + str(max_num)
