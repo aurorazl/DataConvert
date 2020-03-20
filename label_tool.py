@@ -832,7 +832,6 @@ def compress_rle_to_polygon(rle_dict):
     contours = measure.find_contours(mask.decode(rle_dict), 0.5)
     segmentation = []
     for contour in contours:
-        contour = np.flip(contour, axis=1)
         poly = Polygon(contour)
         poly = poly.simplify(1.0, preserve_topology=False)
         segmentation.append(np.array(poly.exterior.coords).ravel().tolist())
