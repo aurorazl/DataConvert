@@ -1,4 +1,5 @@
 pyprind
+psutil
 Cython
 numpy
 pycocotools
