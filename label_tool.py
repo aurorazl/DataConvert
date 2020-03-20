@@ -834,7 +834,8 @@ def compress_rle_to_polygon(rle_dict):
     for contour in contours:
         poly = Polygon(contour)
         poly = poly.simplify(1.0, preserve_topology=False)
-        segmentation.append(np.array(poly.exterior.coords).ravel().tolist())
+        if poly.exterior:
+            segmentation.append(np.array(poly.exterior.coords).ravel().tolist())
     return segmentation[0] if segmentation else segmentation
 
 def module_predict_segmentation_list_to_json(list_file_path,json_path):
