@@ -848,9 +848,10 @@ def module_predict_segmentation_list_to_json(list_file_path,json_path):
         json_dict[one["image_id"]]["images"] = {"file_name":str(one["image_id"])+".jpg","id":one["image_id"],"height":one["segmentation"]["size"][1],"width":one["segmentation"]["size"][0]}
         json_dict[one["image_id"]]["annotations"].append({"segmentation":compress_rle_to_polygon(one["segmentation"])[0],"area":int(mask.area(one["segmentation"])),"iscrowd":0,
                                                           "image_id":one["image_id"],"bbox":one["bbox"],"category_id":one["category_id"],"id":one["image_id"]})
-        with open(os.path.join(json_path, "images", "{}.json".format(one["image_id"])), "w") as f:
-            f.write(json.dumps(json_dict, indent=4, separators=(',', ':')))
         pbar.update()
+    for image_id,di in json_dict.items():
+        with open(os.path.join(json_path, "images", "{}.json".format(image_id)), "w") as f:
+            f.write(json.dumps(di, indent=4, separators=(',', ':')))
 
 def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
