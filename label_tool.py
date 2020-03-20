@@ -828,14 +828,18 @@ def check_coco_image_whether_duplicate(coco_file_path):
         already.add(one)
         pbar.update()
 
-def compress_rle_to_polygon(rle_dict):
+def compress_rle_to_polygon(rle_dict,simply=True):
     contours = measure.find_contours(mask.decode(rle_dict), 0.5)
     segmentation = []
     for contour in contours:
-        poly = Polygon(contour)
-        poly = poly.simplify(1.0, preserve_topology=False)
-        if poly.exterior:
-            segmentation.append(np.array(poly.exterior.coords).ravel().tolist())
+        if simply:
+            poly = Polygon(contour)
+            poly = poly.simplify(1.0, preserve_topology=False)
+            if poly.exterior:
+                segmentation.append(np.array(poly.exterior.coords).ravel().tolist())
+        else:
+            contour = np.flip(contour, axis=1)
+            segmentation.append(contour.ravel().tolist())
     return segmentation[0] if segmentation else segmentation
 
 def module_predict_segmentation_list_to_json(list_file_path,json_path):

@@ -4,3 +4,4 @@ Cython
 numpy
 pycocotools
 matplotlib
+Shapely
