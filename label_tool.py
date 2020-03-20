@@ -838,6 +838,9 @@ def compress_rle_to_polygon(rle_dict):
 def module_predict_segmentation_list_to_json(list_file_path,json_path):
     with open(list_file_path, "r") as f:
         segmentation_list = json.load(f)
+    json_anno_path = os.path.join(json_path, "images")
+    if not os.path.exists(json_anno_path):
+        os.makedirs(json_anno_path)
     json_dict = collections.defaultdict(lambda : {"images":{},"annotations":[]})
     global pbar
     pbar = pyprind.ProgBar(len(segmentation_list), monitor=True, title="module_predict_segmentation_list_to_json")
