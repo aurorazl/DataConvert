@@ -983,7 +983,7 @@ def run_command(args, command, nargs, parser):
         else:
             check_coco_image_whether_duplicate(nargs[0])
     elif command == "module_predict_segmentation_list_to_json":
-        if len(nargs)!=1:
+        if len(nargs)!=2:
             parser.print_help()
             print("\n module_predict_segmentation_list_to_json [list_file_path] [json_out_path]\n")
         else:
