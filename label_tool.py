@@ -845,7 +845,7 @@ def module_predict_segmentation_list_to_json(list_file_path,json_path):
     global pbar
     pbar = pyprind.ProgBar(len(segmentation_list), monitor=True, title="module_predict_segmentation_list_to_json")
     for one in segmentation_list:
-        json_dict[one["image_id"]]["images"] = {"file_name":str(one["image_id"])+".jpg","id":one["image_id"],"height":one["segmentation"]["size"][1],"width":one["segmentation"]["size"][0]}
+        json_dict[one["image_id"]]["images"] = [{"file_name":str(one["image_id"])+".jpg","id":one["image_id"],"height":one["segmentation"]["size"][1],"width":one["segmentation"]["size"][0]}]
         json_dict[one["image_id"]]["annotations"].append({"segmentation":compress_rle_to_polygon(one["segmentation"]),"area":int(mask.area(one["segmentation"])),"iscrowd":0,
                                                           "image_id":one["image_id"],"bbox":one["bbox"],"category_id":one["category_id"],"id":one["image_id"]})
         pbar.update()
