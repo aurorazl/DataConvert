@@ -17,6 +17,7 @@ import collections
 from pycocotools import mask
 from skimage import measure
 import numpy as np
+from shapely.geometry import Polygon
 
 filename_pattern = re.compile(r"(\S+)\.(xml|json)")
 gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json)")
@@ -832,7 +833,9 @@ def compress_rle_to_polygon(rle_dict):
     segmentation = []
     for contour in contours:
         contour = np.flip(contour, axis=1)
-        segmentation.append(contour.ravel().tolist())
+        poly = Polygon(contour)
+        poly = poly.simplify(1.0, preserve_topology=False)
+        segmentation.append(np.array(poly.exterior.coords).ravel().tolist())
     return segmentation[0] if segmentation else segmentation
 
 def module_predict_segmentation_list_to_json(list_file_path,json_path):
