@@ -849,9 +849,11 @@ def module_predict_segmentation_list_to_json(list_file_path,json_path):
         json_dict[one["image_id"]]["annotations"].append({"segmentation":compress_rle_to_polygon(one["segmentation"]),"area":int(mask.area(one["segmentation"])),"iscrowd":0,
                                                           "image_id":one["image_id"],"bbox":one["bbox"],"category_id":one["category_id"],"id":one["image_id"]})
         pbar.update()
+    pbar = pyprind.ProgBar(len(json_dict), monitor=True, title="writing to file")
     for image_id,di in json_dict.items():
         with open(os.path.join(json_path, "images", "{}.json".format(image_id)), "w") as f:
             f.write(json.dumps(di, indent=4, separators=(',', ':')))
+        pbar.update()
 
 def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
