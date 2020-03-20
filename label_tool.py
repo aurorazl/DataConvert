@@ -14,6 +14,9 @@ from pycocotools.coco import COCO
 from xml.dom import minidom
 from DirectoryUtils import cd
 import collections
+from pycocotools import mask
+from skimage import measure
+import numpy as np
 
 filename_pattern = re.compile(r"(\S+)\.(xml|json)")
 gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json)")
@@ -824,6 +827,28 @@ def check_coco_image_whether_duplicate(coco_file_path):
         already.add(one)
         pbar.update()
 
+def compress_rle_to_polygon(rle_dict):
+    contours = measure.find_contours(mask.decode(rle_dict), 0.5)
+    segmentation = []
+    for contour in contours:
+        contour = np.flip(contour, axis=1)
+        segmentation.append(contour.ravel().tolist())
+    return segmentation
+
+def module_predict_segmentation_list_to_json(list_file_path,json_path):
+    with open(list_file_path, "r") as f:
+        segmentation_list = json.load(f)
+    json_dict = collections.defaultdict(lambda : {"images":{},"annotations":[]})
+    global pbar
+    pbar = pyprind.ProgBar(len(segmentation_list), monitor=True, title="module_predict_segmentation_list_to_json")
+    for one in segmentation_list:
+        json_dict[one["image_id"]]["images"] = {"file_name":str(one["image_id"])+".jpg","id":one["image_id"],"height":one["segmentation"]["size"][1],"width":one["segmentation"]["size"][0]}
+        json_dict[one["image_id"]]["annotations"].append({"segmentation":compress_rle_to_polygon(one["segmentation"])[0],"area":mask.area(one["segmentation"]),"iscrowd":0,
+                                                          "image_id":one["image_id"],"bbox":one["bbox"],"category_id":one["category_id"],"id":one["image_id"]})
+        with open(os.path.join(json_path, "images", "{}.json".format(one["image_id"])), "w") as f:
+            f.write(json.dumps(json_dict, indent=4, separators=(',', ':')))
+        pbar.update()
+
 def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
         if len(nargs) != 2:
@@ -957,6 +982,12 @@ def run_command(args, command, nargs, parser):
             print("\n check_coco_image_whether_duplicate [cooc_file_path]\n")
         else:
             check_coco_image_whether_duplicate(nargs[0])
+    elif command == "module_predict_segmentation_list_to_json":
+        if len(nargs)!=1:
+            parser.print_help()
+            print("\n module_predict_segmentation_list_to_json [list_file_path] [json_out_path]\n")
+        else:
+            module_predict_segmentation_list_to_json(nargs[0],nargs[1])
     else:
         parser.print_help()
 
