@@ -424,7 +424,11 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
         new_image_id_list.append(new_image_id)
         json_dict = {}
         json_dict["images"] = coco.loadImgs([ImgID])
-        json_dict["annotations"] = coco.loadAnns(coco.getAnnIds(imgIds=[ImgID]))
+        annotations = coco.loadAnns(coco.getAnnIds(imgIds=[ImgID]))
+        if args and args.base_category_num != 0:
+            for one_anno in annotations:
+                one_anno["category_id"] = int(one_anno["category_id"]) + args.base_category_num
+        json_dict["annotations"] = annotations
         with open(os.path.join(json_path, "images", "{}.json".format(new_image_id)), "w") as f:
             f.write(json.dumps(json_dict, indent=4, separators=(',', ':')))
         img_path = os.path.join(coco_image_path, json_dict["images"][0]["file_name"])
