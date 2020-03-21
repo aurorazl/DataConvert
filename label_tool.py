@@ -18,6 +18,10 @@ from pycocotools import mask
 from skimage import measure
 import numpy as np
 from shapely.geometry import Polygon
+from PIL import Image
+from PIL import ImageDraw
+import matplotlib.pyplot as plt
+import cv2
 
 filename_pattern = re.compile(r"(\S+)\.(xml|json)")
 gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json)")
@@ -830,19 +834,86 @@ def check_coco_image_whether_duplicate(coco_file_path):
 
 def compress_rle_to_polygon(rle_dict,simply=True):
     contours = measure.find_contours(mask.decode(rle_dict), 0.5)
+    # contours,_=cv2.findContours(mask.decode(rle_dict), cv2.RETR_TREE,
+    #                             cv2.CHAIN_APPROX_SIMPLE)
     segmentation = []
     for contour in contours:
         if simply:
-            poly = Polygon(contour)
-            poly = poly.simplify(1.0, preserve_topology=False)
-            if poly.exterior:
-                segmentation.append(np.array(poly.exterior.coords).ravel().tolist())
+            ret = simplify_contour_to_polygon_by_shapely(contour)
+            if ret:
+                segmentation.append(ret)
         else:
             contour = np.flip(contour, axis=1)
             segmentation.append(contour.ravel().tolist())
     return segmentation[0] if segmentation else segmentation
 
+def close_contour(contour):
+    if not np.array_equal(contour[0], contour[-1]):
+        contour = np.vstack((contour, contour[0]))
+    return contour
+
+def simplify_contour_to_polygon_by_skimage(contour):
+    """
+    使用skimage.measure来减少点的数量
+    """
+    contour = close_contour(contour)
+    contour = measure.approximate_polygon(contour, 1)
+    contour = np.flip(contour, axis=1)
+    segmentation = contour.ravel().tolist()
+    return segmentation
+
+def simplify_contour_to_polygon_by_shapely(contour):
+    """
+    使用shapely来减少点的数量
+    """
+    contour = np.flip(contour, axis=1)
+    poly = Polygon(contour)
+    poly = poly.simplify(1.0, preserve_topology=False)
+    segmentation = None
+    if poly.exterior:
+        segmentation = np.array(poly.exterior.coords).ravel().tolist()
+    return segmentation
+
+def show_segmentation_on_picture(image_path,segmentation,image_out_path):
+    """
+    使用pillow将一个标注信息画在图上
+    """
+    img = Image.open(image_path).convert('RGBA')
+    img2 = img.copy()
+    draw = ImageDraw.Draw(img2)
+    draw.polygon(segmentation, fill="red")
+    img3 = Image.blend(img, img2, 0.5)
+    img3.save(image_out_path)
+
+def draw_segmentation_point(segmentation1,segmentation2):
+    """
+    使用matplotlib描出两个标注信息的点
+    """
+    axis = [(segmentation1[x], segmentation1[x + 1]) for x in range(0, len(segmentation1) - 1, 2)]
+    x, y = zip(*axis)
+    plt.plot(x, y)
+    axis = [(segmentation2[x], segmentation2[x + 1]) for x in range(0, len(segmentation2) - 1, 2)]
+    x, y = zip(*axis)
+    plt.plot(x, y)
+    plt.show()
+
+def show_segmentation_on_picture_by_opencv(image_path,segmentation,segmentation_simply):
+    """
+    使用cv2将两个标注信息画在图上
+    """
+    img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+    axis = [(segmentation[x], segmentation[x + 1]) for x in range(0, len(segmentation) - 1, 2)]
+    cv2.polylines(img, [np.array([axis], np.int32)], True, (0, 255, 0), thickness=1)
+    axis_simply = [(segmentation_simply[x], segmentation_simply[x + 1]) for x in range(0, len(segmentation_simply) - 1, 2)]
+    cv2.polylines(axis_simply, [np.array([axis], np.int32)], True, (255, 255, 255), thickness=0.1)
+    cv2.imshow('image', img)
+    if cv2.waitKey(0) & 0xFF == ord('q'):
+        cv2.destroyAllWindows()
+
 def module_predict_segmentation_list_to_json(list_file_path,json_path):
+    """
+    将RLE转为polygon，可指定是否simplify点的数量
+    """
     with open(list_file_path, "r") as f:
         segmentation_list = json.load(f)
     json_anno_path = os.path.join(json_path, "images")
