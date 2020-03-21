@@ -1125,7 +1125,7 @@ if __name__ == '__main__':
     parser.add_argument("--ignore-image",
                         default=False,
                         help="dont copy image",
-                        action="store_true",type=bool
+                        action="store_true"
                         )
     parser.add_argument("--percent",
                         default=0,
