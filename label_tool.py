@@ -803,7 +803,7 @@ def remove_image_zero_prefix(image_path):
                 os.rename(one,new_image_path)
             pbar.update()
 
-def generate_commit_json(json_path,userId):
+def generate_commit_json(json_path,userId,base_category_num=0):
     with open(os.path.join(json_path, "list.json"), "r") as f:
         ImgIDs = json.load(f)["ImgIDs"]
     global pbar
@@ -814,8 +814,8 @@ def generate_commit_json(json_path,userId):
         with open(os.path.join(json_file_path, "{}.json".format(ImgID)), "r") as f:
             json_dict = json.load(f)
         for i in json_dict["annotations"]:
-            if i["category_id"] not in commit_json[i["image_id"]]["categoryIds"]:
-                commit_json[i["image_id"]]["categoryIds"].append(i["category_id"])
+            if int(i["category_id"])+base_category_num not in commit_json[i["image_id"]]["categoryIds"]:
+                commit_json[i["image_id"]]["categoryIds"].append(int(i["category_id"])+base_category_num)
         pbar.update()
     with open(os.path.join(json_path, "commit.json"), "w") as f:
         f.write(json.dumps(commit_json, indent=4, separators=(',', ':')))
@@ -910,7 +910,7 @@ def show_segmentation_on_picture_by_opencv(image_path,segmentation,segmentation_
     if cv2.waitKey(0) & 0xFF == ord('q'):
         cv2.destroyAllWindows()
 
-def module_predict_segmentation_list_to_json(list_file_path,json_path):
+def module_predict_segmentation_list_to_json(list_file_path,json_path,base_category_num=0):
     """
     将RLE转为polygon，可指定是否simplify点的数量
     """
@@ -925,7 +925,7 @@ def module_predict_segmentation_list_to_json(list_file_path,json_path):
     for one in segmentation_list:
         json_dict[one["image_id"]]["images"] = [{"file_name":str(one["image_id"])+".jpg","id":one["image_id"],"height":one["segmentation"]["size"][1],"width":one["segmentation"]["size"][0]}]
         json_dict[one["image_id"]]["annotations"].append({"segmentation":compress_rle_to_polygon(one["segmentation"]),"area":int(mask.area(one["segmentation"])),"iscrowd":0,
-                                                          "image_id":one["image_id"],"bbox":one["bbox"],"category_id":one["category_id"],"id":one["image_id"]})
+                                                          "image_id":one["image_id"],"bbox":one["bbox"],"category_id":int(one["category_id"])+base_category_num,"id":one["image_id"]})
         pbar.update()
     pbar = pyprind.ProgBar(len(json_dict), monitor=True, title="writing to file")
     for image_id,di in json_dict.items():
@@ -1059,7 +1059,7 @@ def run_command(args, command, nargs, parser):
             parser.print_help()
             print("\n generate_commit_json [json_path] [userId]\n")
         else:
-            generate_commit_json(nargs[0],nargs[1])
+            generate_commit_json(nargs[0],nargs[1],args.base_category_num)
     elif command == "check_coco_image_whether_duplicate":
         if len(nargs)!=1:
             parser.print_help()
@@ -1071,7 +1071,7 @@ def run_command(args, command, nargs, parser):
             parser.print_help()
             print("\n module_predict_segmentation_list_to_json [list_file_path] [json_out_path]\n")
         else:
-            module_predict_segmentation_list_to_json(nargs[0],nargs[1])
+            module_predict_segmentation_list_to_json(nargs[0],nargs[1],args.base_category_num)
     else:
         parser.print_help()
 
@@ -1131,6 +1131,11 @@ if __name__ == '__main__':
     parser.add_argument("--number","-n",
                         default=0,
                         help="copy file numbers",
+                        action="store"
+                        )
+    parser.add_argument("--base_category_num", "-cn",
+                        default=0,
+                        help="base_category_num",
                         action="store"
                         )
     parser.add_argument("command",
