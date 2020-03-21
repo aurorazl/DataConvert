@@ -1125,7 +1125,7 @@ if __name__ == '__main__':
     parser.add_argument("--ignore-image",
                         default=False,
                         help="dont copy image",
-                        action="store_true"
+                        action="store_true",type=bool
                         )
     parser.add_argument("--percent",
                         default=0,
@@ -1135,12 +1135,12 @@ if __name__ == '__main__':
     parser.add_argument("--number","-n",
                         default=0,
                         help="copy file numbers",
-                        action="store"
+                        action="store",type=int
                         )
     parser.add_argument("--base_category_num", "-cn",
                         default=0,
                         help="base_category_num",
-                        action="store"
+                        action="store",type=int
                         )
     parser.add_argument("command",
                         help="See above for the list of valid command")
