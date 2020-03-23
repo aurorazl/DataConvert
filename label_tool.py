@@ -428,6 +428,9 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
         if args and args.base_category_num != 0:
             for one_anno in annotations:
                 one_anno["category_id"] = int(one_anno["category_id"]) + args.base_category_num
+        if args and args.use_category_mapping:
+            for one_anno in annotations:
+                one_anno["category_id"] = category_map.get(one_anno["category_id"],one_anno["category_id"])
         json_dict["annotations"] = annotations
         with open(os.path.join(json_path, "images", "{}.json".format(new_image_id)), "w") as f:
             f.write(json.dumps(json_dict, indent=4, separators=(',', ':')))
@@ -929,7 +932,9 @@ def module_predict_segmentation_list_to_json(list_file_path,json_path,base_categ
     for one in segmentation_list:
         json_dict[one["image_id"]]["images"] = [{"file_name":str(one["image_id"])+".jpg","id":one["image_id"],"height":one["segmentation"]["size"][1],"width":one["segmentation"]["size"][0]}]
         json_dict[one["image_id"]]["annotations"].append({"segmentation":compress_rle_to_polygon(one["segmentation"]),"area":int(mask.area(one["segmentation"])),"iscrowd":0,
-                                                          "image_id":one["image_id"],"bbox":one["bbox"],"category_id":int(one["category_id"])+base_category_num,"id":one["image_id"]})
+                                                          "image_id":one["image_id"],"bbox":one["bbox"],
+                                                          "category_id":category_map.get(int(one["category_id"])+base_category_num,int(one["category_id"])+base_category_num),
+                                                          "id":one["image_id"]})
         pbar.update()
     pbar = pyprind.ProgBar(len(json_dict), monitor=True, title="writing to file")
     for image_id,di in json_dict.items():
@@ -1147,8 +1152,14 @@ if __name__ == '__main__':
     parser.add_argument('nargs', nargs=argparse.REMAINDER,
                         help="Additional command argument",
                         )
+    parser.add_argument("--use-category-mapping",
+                        default=False,
+                        help="use category mapping",
+                        action="store_true"
+                        )
     args = parser.parse_args()
     command = args.command
     nargs = args.nargs
+    category_map = {1:96,2:97,3:49,4:98,5:99}
     run_command(args, command, nargs, parser)
 
