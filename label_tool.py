@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/python
 import os
 import json
@@ -23,7 +24,8 @@ from PIL import ImageDraw
 import matplotlib.pyplot as plt
 import cv2
 
-filename_pattern = re.compile(r"(\S+)\.(xml|json)")
+filename_pattern = re.compile(r"(\S+)\.(xml|json|jpg)")
+image_pattern = re.compile(r"(\S+)\.(jpg)")
 gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json)")
 number_pattern = re.compile(r"(\S*?)(\d+)")
 
@@ -942,6 +944,17 @@ def module_predict_segmentation_list_to_json(list_file_path,json_path,base_categ
             f.write(json.dumps(di, indent=4, separators=(',', ':')))
         pbar.update()
 
+def generate_image_id_list_for_new_datasets(image_path,out_path):
+    src_list = os.listdir(image_path)
+    new_image_id_list = []
+    for filename in src_list:
+        res = image_pattern.match(filename)
+        if res:
+            image_id = res.groups()[0]
+            new_image_id_list.append(image_id)
+    with open(os.path.join(out_path, "list.json"), "w") as f:
+        f.write(json.dumps({"ImgIDs": new_image_id_list}, indent=4, separators=(',', ':')))
+
 def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
         if len(nargs) != 2:
@@ -1081,6 +1094,12 @@ def run_command(args, command, nargs, parser):
             print("\n module_predict_segmentation_list_to_json [list_file_path] [json_out_path]\n")
         else:
             module_predict_segmentation_list_to_json(nargs[0],nargs[1],args.base_category_num)
+    elif command == "generate_image_id_list_for_new_datasets":
+        if len(nargs)!=2:
+            parser.print_help()
+            print("\n generate_image_id_list_for_new_datasets [image_path] [json_out_path]\n")
+        else:
+            generate_image_id_list_for_new_datasets(nargs[0],nargs[1])
     else:
         parser.print_help()
 
@@ -1160,6 +1179,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     command = args.command
     nargs = args.nargs
+    # 用于category映射为自定义的id
     category_map = {1:96,2:97,3:49,4:98,5:99}
     run_command(args, command, nargs, parser)
 

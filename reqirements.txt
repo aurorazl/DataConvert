@@ -1,6 +1,6 @@
+Cython
 pyprind
 psutil
-Cython
 numpy
 pycocotools
 matplotlib
