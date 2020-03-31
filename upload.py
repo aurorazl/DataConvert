@@ -17,6 +17,8 @@ def upload_dataset(image_path,anno_path,project_id,dataset_id,verbose = False,ig
         os.system(cmd)
         utils.check_path_exist(config["image_tar_name"])
         utils.scp(config["identity_file"], config["image_tar_name"], config["nfs_base_path"], config["user"],config["host"], verbose)
+        utils.check_path_exist("list.json")
+        utils.scp(config["identity_file"], "list.json", config["nfs_base_path"], config["user"], config["host"],verbose)
 
     utils.remove_local_file(config["json_tar_name"])
     utils.check_path_exist(anno_path)
@@ -24,10 +26,8 @@ def upload_dataset(image_path,anno_path,project_id,dataset_id,verbose = False,ig
     if verbose:
         print(cmd)
     os.system(cmd)
-    utils.check_path_exist("list.json")
     utils.check_path_exist("commit.json")
     utils.scp(config["identity_file"],config["json_tar_name"], config["nfs_base_path"],config["user"], config["host"],verbose)
-    utils.scp(config["identity_file"],"list.json", config["nfs_base_path"],config["user"], config["host"],verbose)
     utils.scp(config["identity_file"],"commit.json", config["nfs_base_path"],config["user"], config["host"],verbose)
     target_image_base_path = os.path.join(config["nfs_base_path"],"label/public/tasks",dataset_id)
     target_json_base_path = os.path.join(config["nfs_base_path"],"label/private/tasks",dataset_id,project_id)
@@ -42,9 +42,9 @@ def upload_dataset(image_path,anno_path,project_id,dataset_id,verbose = False,ig
     cmd += "mkdir -p " + target_json_base_path +";"
     if not ignore_image:
         cmd += "tar zxf %s -C %s" %(os.path.join(config["nfs_base_path"],config["image_tar_name"]),target_image_base_path) + ";"
-    cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "list.json"), target_image_base_path) + ";"
+        cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "list.json"), target_image_base_path) + ";"
     cmd += "tar zxf %s -C %s" %(os.path.join(config["nfs_base_path"],config["json_tar_name"]),target_json_base_path) + ";"
-    cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "commit.json"), target_image_base_path) + ";"
+    cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "commit.json"), target_json_base_path) + ";"
     utils.SSH_exec_cmd_with_output(config["identity_file"],config["user"], config["host"],cmd,verbose=verbose)
 
 def upload_model_predict_result(anno_path,dataset_id,project_id,verbose = False):
