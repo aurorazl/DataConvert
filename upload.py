@@ -85,6 +85,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     parser.add_argument("command",
                         help="See above for the list of valid command")
+    parser.add_argument('nargs', nargs=argparse.REMAINDER,
+                        help="Additional command argument",
+                        )
     command = args.command
     nargs = args.nargs
     run_command(args, command, nargs, parser)
