@@ -55,12 +55,9 @@ def upload_model_predict_result(anno_path,dataset_id,project_id,verbose = False)
     utils.scp(config["identity_file"], config["json_tar_name"], config["nfs_base_path"], config["user"], config["host"])
     target_json_base_path = os.path.join(config["nfs_base_path"], "label/private/predict", dataset_id, project_id)
     cmd = ""
-    cmd += "rm -f " + os.path.join(target_json_base_path, "list.json") + ";"
     cmd += "mkdir -p " + target_json_base_path + ";"
-    cmd += "tar zxf %s -C %s" % (os.path.join(config["nfs_base_path"], config["json_tar_name"]), os.path.exists("")) + ";"
-    if verbose:
-        print(cmd)
-    utils.SSH_exec_cmd_with_output(config["identity_file"],config["user"], config["host"],cmd)
+    cmd += "tar zxf %s -C %s" % (os.path.join(config["nfs_base_path"], config["json_tar_name"]), target_json_base_path) + ";"
+    utils.SSH_exec_cmd_with_output(config["identity_file"],config["user"], config["host"],cmd,verbose=verbose)
 
 def run_command(args, command, nargs, parser):
     if command == "upload_dataset":
