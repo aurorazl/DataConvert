@@ -96,7 +96,7 @@ def run_command(args, command, nargs, parser):
         else:
             upload_model_predict_result(nargs[0], nargs[1],nargs[2],args.verbose)
     elif command == "upload_dataset_from_coco":
-        if len(nargs) != 4:
+        if len(nargs) != 5:
             parser.print_help()
             print("upload_dataset_from_coco [coco_anno_path] [image_path]  [project_id] [dataset_id] [user_id]")
         else:

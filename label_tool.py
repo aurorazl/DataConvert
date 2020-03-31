@@ -959,7 +959,8 @@ def generate_image_id_list_for_new_datasets(image_path,out_path):
     with open(os.path.join(out_path, "list.json"), "w") as f:
         f.write(json.dumps({"ImgIDs": new_image_id_list}, indent=4, separators=(',', ':')))
 
-def
+def calculate_dataset_iou():
+    pass
 
 def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
