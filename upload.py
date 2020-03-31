@@ -55,6 +55,7 @@ def upload_model_predict_result(anno_path,dataset_id,project_id,verbose = False)
     utils.scp(config["identity_file"], config["json_tar_name"], config["nfs_base_path"], config["user"], config["host"])
     target_json_base_path = os.path.join(config["nfs_base_path"], "label/private/predict", dataset_id, project_id)
     cmd = ""
+    cmd += "rm -rf " + os.path.join(target_json_base_path, "images") + ";"
     cmd += "mkdir -p " + target_json_base_path + ";"
     cmd += "tar zxf %s -C %s" % (os.path.join(config["nfs_base_path"], config["json_tar_name"]), target_json_base_path) + ";"
     utils.SSH_exec_cmd_with_output(config["identity_file"],config["user"], config["host"],cmd,verbose=verbose)
