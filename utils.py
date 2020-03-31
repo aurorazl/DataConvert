@@ -11,7 +11,7 @@ def remove_local_file(path):
 
 def remove_directiry(path):
     if os.path.exists(path):
-        os.removedirs(path)
+        os.system("rm -rf %s"%path)
 
 def scp (identity_file, source, target, user, host, verbose = False):
     cmd = 'scp -q -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %s -r "%s" "%s@%s:%s"' % (identity_file, source, user, host, target)
