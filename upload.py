@@ -144,5 +144,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     command = args.command
     nargs = args.nargs
-    category_map = {1: 96, 2: 97, 3: 49, 4: 98, 5: 99}
     run_command(args, command, nargs, parser)

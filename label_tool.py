@@ -28,7 +28,7 @@ filename_pattern = re.compile(r"(\S+)\.(xml|json|jpg)")
 image_pattern = re.compile(r"(\S+)\.(jpg)")
 gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json)")
 number_pattern = re.compile(r"(\S*?)(\d+)")
-
+category_map = {1:96,2:97,3:49,4:98,5:99}
 
 def get(root, name):
     vars = root.findall(name)
