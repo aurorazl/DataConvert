@@ -68,7 +68,7 @@ def run_command(args, command, nargs, parser):
             parser.print_help()
             print("upload_dataset [image_path] [anno_path] [project_id] [dataset_id]")
         else:
-            upload_dataset(nargs[0], nargs[1],nargs[2],nargs[3],args.verbose)
+            upload_dataset(nargs[0], nargs[1],nargs[2],nargs[3],args.verbose,args.ignore_image)
     elif command == "upload_model_predict_result":
         if len(nargs) != 3:
             parser.print_help()
