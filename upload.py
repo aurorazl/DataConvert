@@ -100,7 +100,7 @@ def run_command(args, command, nargs, parser):
             parser.print_help()
             print("upload_dataset_from_coco [coco_anno_path] [image_path]  [project_id] [dataset_id] [user_id]")
         else:
-            upload_dataset_from_coco(nargs[0], nargs[1],nargs[2],nargs[3],args.verbose,args.ignore_image,args)
+            upload_dataset_from_coco(nargs[0], nargs[1],nargs[2],nargs[3],nargs[4],args.verbose,args.ignore_image,args)
     elif command == "upload_model_predict_result_from_list":
         if len(nargs) != 3:
             parser.print_help()
