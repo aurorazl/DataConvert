@@ -47,7 +47,8 @@ def upload_dataset(image_path,anno_path,project_id,dataset_id,verbose = False,ig
     cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "commit.json"), target_json_base_path) + ";"
     utils.SSH_exec_cmd_with_output(config["identity_file"],config["user"], config["host"],cmd,verbose=verbose)
 
-def upload_model_predict_result(anno_path,dataset_id,project_id,verbose = False):
+def upload_model_predict_result(anno_path,project_id,dataset_id,verbose = False):
+    utils.check_path_exist(anno_path)
     cmd = "tar zcf %s %s/*.json" % (config["json_tar_name"], anno_path)
     if verbose:
         print(cmd)
