@@ -33,20 +33,18 @@ def upload_dataset(image_path,anno_path,project_id,dataset_id,verbose = False,ig
     target_json_base_path = os.path.join(config["nfs_base_path"],"label/private/tasks",dataset_id,project_id)
     cmd = ""
     if not ignore_image:
-        cmd += "rm -rf" + os.path.join(target_image_base_path,"images") +";"
-    cmd += "rm -f" + os.path.join(target_image_base_path,"list.json") +";"
-    cmd += "rm -f" + os.path.join(target_image_base_path,"commit.json") +";"
-    cmd += "rm -rf" + os.path.join(target_json_base_path, "images") + ";"
+        cmd += "rm -rf " + os.path.join(target_image_base_path,"images") +";"
+    cmd += "rm -f " + os.path.join(target_image_base_path,"list.json") +";"
+    cmd += "rm -f " + os.path.join(target_image_base_path,"commit.json") +";"
+    cmd += "rm -rf " + os.path.join(target_json_base_path, "images") + ";"
     if not ignore_image:
-        cmd += "mkdir -p" + target_image_base_path +";"
-    cmd += "mkdir -p" + target_json_base_path +";"
+        cmd += "mkdir -p " + target_image_base_path +";"
+    cmd += "mkdir -p " + target_json_base_path +";"
     if not ignore_image:
         cmd += "tar zxf %s -C %s" %(os.path.join(config["nfs_base_path"],config["image_tar_name"]),target_image_base_path) + ";"
     cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "list.json"), target_image_base_path) + ";"
     cmd += "tar zxf %s -C %s" %(os.path.join(config["nfs_base_path"],config["json_tar_name"]),os.path.exists("")) + ";"
     cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "commit.json"), target_image_base_path) + ";"
-    if verbose:
-        print(cmd)
     utils.SSH_exec_cmd_with_output(config["identity_file"],config["user"], config["host"],cmd,verbose=verbose)
 
 def upload_model_predict_result(anno_path,dataset_id,project_id,verbose = False):
@@ -57,8 +55,8 @@ def upload_model_predict_result(anno_path,dataset_id,project_id,verbose = False)
     utils.scp(config["identity_file"], config["json_tar_name"], config["nfs_base_path"], config["user"], config["host"])
     target_json_base_path = os.path.join(config["nfs_base_path"], "label/private/predict", dataset_id, project_id)
     cmd = ""
-    cmd += "rm -f" + os.path.join(target_json_base_path, "list.json") + ";"
-    cmd += "mkdir -p" + target_json_base_path + ";"
+    cmd += "rm -f " + os.path.join(target_json_base_path, "list.json") + ";"
+    cmd += "mkdir -p " + target_json_base_path + ";"
     cmd += "tar zxf %s -C %s" % (os.path.join(config["nfs_base_path"], config["json_tar_name"]), os.path.exists("")) + ";"
     if verbose:
         print(cmd)
