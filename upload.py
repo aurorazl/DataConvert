@@ -82,12 +82,12 @@ if __name__ == '__main__':
         upload_dataset 
             [image_path] [anno_path] [project_id] [dataset_id]
       '''))
-    args = parser.parse_args()
     parser.add_argument("command",
                         help="See above for the list of valid command")
     parser.add_argument('nargs', nargs=argparse.REMAINDER,
                         help="Additional command argument",
                         )
+    args = parser.parse_args()
     command = args.command
     nargs = args.nargs
     run_command(args, command, nargs, parser)
