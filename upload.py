@@ -43,7 +43,7 @@ def upload_dataset(image_path,anno_path,project_id,dataset_id,verbose = False,ig
     if not ignore_image:
         cmd += "tar zxf %s -C %s" %(os.path.join(config["nfs_base_path"],config["image_tar_name"]),target_image_base_path) + ";"
     cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "list.json"), target_image_base_path) + ";"
-    cmd += "tar zxf %s -C %s" %(os.path.join(config["nfs_base_path"],config["json_tar_name"]),os.path.exists("")) + ";"
+    cmd += "tar zxf %s -C %s" %(os.path.join(config["nfs_base_path"],config["json_tar_name"]),target_json_base_path) + ";"
     cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "commit.json"), target_image_base_path) + ";"
     utils.SSH_exec_cmd_with_output(config["identity_file"],config["user"], config["host"],cmd,verbose=verbose)
 
