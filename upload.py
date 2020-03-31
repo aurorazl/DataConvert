@@ -24,6 +24,8 @@ def upload_dataset(image_path,anno_path,project_id,dataset_id,verbose = False,ig
     if verbose:
         print(cmd)
     os.system(cmd)
+    utils.check_path_exist("list.json")
+    utils.check_path_exist("commit.json")
     utils.scp(config["identity_file"],config["json_tar_name"], config["nfs_base_path"],config["user"], config["host"],verbose)
     utils.scp(config["identity_file"],"list.json", config["nfs_base_path"],config["user"], config["host"],verbose)
     utils.scp(config["identity_file"],"commit.json", config["nfs_base_path"],config["user"], config["host"],verbose)
