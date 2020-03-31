@@ -2,7 +2,7 @@ import os
 import subprocess
 
 def check_path_exist(path):
-    if os.path.exists(path):
+    if not os.path.exists(path):
         raise Exception("path {} not found".format(path))
 
 def remove_local_file(path):
