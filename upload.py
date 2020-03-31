@@ -6,10 +6,14 @@ import os
 import label_tool
 import utils
 from config import config
+from DirectoryUtils import cd
 
 def upload_dataset(image_path,anno_path,project_id,dataset_id,verbose = False,ignore_image=False):
+    utils.check_path_exist("commit.json")
+    utils.check_path_exist(anno_path)
     if not ignore_image:
         utils.check_path_exist(image_path)
+        utils.check_path_exist("list.json")
         utils.remove_local_file(config["image_tar_name"])
         cmd = "tar zcf %s %s/*.jpg" % (config["image_tar_name"], image_path)
         if verbose:
@@ -17,16 +21,13 @@ def upload_dataset(image_path,anno_path,project_id,dataset_id,verbose = False,ig
         os.system(cmd)
         utils.check_path_exist(config["image_tar_name"])
         utils.scp(config["identity_file"], config["image_tar_name"], config["nfs_base_path"], config["user"],config["host"], verbose)
-        utils.check_path_exist("list.json")
         utils.scp(config["identity_file"], "list.json", config["nfs_base_path"], config["user"], config["host"],verbose)
 
     utils.remove_local_file(config["json_tar_name"])
-    utils.check_path_exist(anno_path)
     cmd = "tar zcf %s %s/*.json" % (config["json_tar_name"],anno_path)
     if verbose:
         print(cmd)
     os.system(cmd)
-    utils.check_path_exist("commit.json")
     utils.scp(config["identity_file"],config["json_tar_name"], config["nfs_base_path"],config["user"], config["host"],verbose)
     utils.scp(config["identity_file"],"commit.json", config["nfs_base_path"],config["user"], config["host"],verbose)
     target_image_base_path = os.path.join(config["nfs_base_path"],"label/public/tasks",dataset_id)
@@ -61,6 +62,26 @@ def upload_model_predict_result(anno_path,project_id,dataset_id,verbose = False)
     cmd += "tar zxf %s -C %s" % (os.path.join(config["nfs_base_path"], config["json_tar_name"]), target_json_base_path) + ";"
     utils.SSH_exec_cmd_with_output(config["identity_file"],config["user"], config["host"],cmd,verbose=verbose)
 
+def upload_dataset_from_coco(coco_anno_path,image_path,project_id,dataset_id,user_id,verbose = False,ignore_image=False,args=None):
+    utils.check_path_exist(coco_anno_path)
+    utils.check_path_exist(image_path)
+    out_json_path = os.path.join("./","template_for_convert")
+    utils.remove_directiry(out_json_path)
+    os.system("mkdir %s"% out_json_path)
+    label_tool.merge_coco_to_json_dataset(coco_anno_path,image_path,out_json_path,args=args)
+    label_tool.generate_commit_json(out_json_path,user_id,args.base_category_num)
+    with cd(out_json_path):
+        upload_dataset("images","images",project_id,dataset_id,verbose,ignore_image)
+
+def upload_model_predict_result_from_list(list_file_path,project_id,dataset_id,verbose=True,args=None):
+    utils.check_path_exist(list_file_path)
+    out_json_path = os.path.join("./", "template_for_convert")
+    utils.remove_directiry(out_json_path)
+    os.system("mkdir %s" % out_json_path)
+    label_tool.module_predict_segmentation_list_to_json(list_file_path,out_json_path,args.base_category_num)
+    with cd(out_json_path):
+        upload_model_predict_result("images",project_id,dataset_id,verbose)
+
 def run_command(args, command, nargs, parser):
     if command == "upload_dataset":
         if len(nargs) != 4:
@@ -74,6 +95,18 @@ def run_command(args, command, nargs, parser):
             print("upload_model_predict_result [anno_path] [project_id] [dataset_id]")
         else:
             upload_model_predict_result(nargs[0], nargs[1],nargs[2],args.verbose)
+    elif command == "upload_dataset_from_coco":
+        if len(nargs) != 4:
+            parser.print_help()
+            print("upload_dataset_from_coco [coco_anno_path] [image_path]  [project_id] [dataset_id] [user_id]")
+        else:
+            upload_dataset_from_coco(nargs[0], nargs[1],nargs[2],nargs[3],args.verbose,args.ignore_image,args)
+    elif command == "upload_model_predict_result_from_list":
+        if len(nargs) != 3:
+            parser.print_help()
+            print("upload_model_predict_result_from_list [list_file_path]  [project_id] [dataset_id]")
+        else:
+            upload_model_predict_result_from_list(nargs[0], nargs[1],nargs[2],args.verbose,args)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='upload.py',
@@ -97,6 +130,16 @@ if __name__ == '__main__':
                         default=False,
                         help="dont copy image",
                         action="store_true"
+                        )
+    parser.add_argument("--use-category-mapping",
+                        default=False,
+                        help="use category mapping",
+                        action="store_true"
+                        )
+    parser.add_argument("--base_category_num", "-cn",
+                        default=0,
+                        help="base_category_num",
+                        action="store",type=int
                         )
     args = parser.parse_args()
     command = args.command
