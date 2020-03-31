@@ -418,18 +418,22 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
     else:
         new_image_id_list = []
     for ImgID in ImgIDs:
+        json_dict = {}
+        json_dict["images"] = coco.loadImgs([ImgID])
         if max_num==0 and not prefix:
-            new_image_id = str(ImgID)
+            new_image_id = json_dict["images"][0]["file_name"].split(".jpg")[0]
         else:
             max_num += 1
             new_image_id = prefix + str(max_num)
+        json_dict["images"][0]["id"] = new_image_id
         new_image_id_list.append(new_image_id)
-        json_dict = {}
-        json_dict["images"] = coco.loadImgs([ImgID])
         annotations = coco.loadAnns(coco.getAnnIds(imgIds=[ImgID]))
         if args and args.base_category_num != 0:
             for one_anno in annotations:
                 one_anno["category_id"] = int(one_anno["category_id"]) + args.base_category_num
+        for one_anno in annotations:
+            one_anno["image_id"] = new_image_id
+            one_anno["id"] = new_image_id
         if args and args.use_category_mapping:
             for one_anno in annotations:
                 one_anno["category_id"] = category_map.get(one_anno["category_id"],one_anno["category_id"])
