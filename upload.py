@@ -116,13 +116,13 @@ def upload_model_predict_result_from_coco(coco_file_path,project_id,dataset_id,v
     with cd(out_json_path):
         upload_model_predict_result("images",project_id,dataset_id,verbose)
 
-def upload_model_predict_result_from_voc(voc_anno_path,project_id,dataset_id,verbose=True,args=None):
+def upload_model_predict_result_from_voc(voc_anno_path,voc_image_path,project_id,dataset_id,verbose=True,args=None):
     utils.check_path_exist(voc_anno_path)
     out_json_path = os.path.join("./", "template_for_convert")
     utils.remove_directiry(out_json_path)
     os.system("mkdir %s" % out_json_path)
     args.ignore_image = True
-    label_tool.merge_voc_dataset_to_json_dataset(voc_anno_path,"",out_json_path,args=args)
+    label_tool.merge_voc_dataset_to_json_dataset(voc_anno_path,voc_image_path,out_json_path,args=args)
     with cd(out_json_path):
         upload_model_predict_result("images",project_id,dataset_id,verbose)
 
@@ -180,9 +180,9 @@ def run_command(args, command, nargs, parser):
         else:
             upload_model_predict_result_from_coco(nargs[0], nargs[1],nargs[2],args.verbose,args)
     elif command == "upload_model_predict_result_from_voc":
-        if len(nargs) != 3:
+        if len(nargs) != 4:
             parser.print_help()
-            print("upload_model_predict_result_from_voc [voc_anno_path] [project_id] [dataset_id]")
+            print("upload_model_predict_result_from_voc [voc_anno_path] [voc_image_path] [project_id] [dataset_id]")
         else:
             upload_model_predict_result_from_voc(nargs[0], nargs[1],nargs[2],args.verbose,args)
     elif command == "upload_model_predict_result_from_ocr":
