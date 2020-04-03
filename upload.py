@@ -73,7 +73,9 @@ def upload_dataset_from_coco(coco_anno_path,image_path,project_id,dataset_id,use
     with cd(out_json_path):
         upload_dataset("images","images",project_id,dataset_id,verbose,ignore_image)
 
-def upload_dataset_from_voc(voc_anno_path,voc_image_path,project_id,dataset_id,user_id,verbose = False,ignore_image=False,args=None):
+def upload_dataset_from_voc(voc_path,project_id,dataset_id,user_id,verbose = False,ignore_image=False,args=None):
+    voc_anno_path = os.path.join(voc_path,"Annotations")
+    voc_image_path = os.path.join(voc_path,"JPEGImages")
     utils.check_path_exist(voc_anno_path)
     utils.check_path_exist(voc_image_path)
     out_json_path = os.path.join("./","template_for_convert")
@@ -113,11 +115,11 @@ def run_command(args, command, nargs, parser):
         else:
             upload_dataset_from_coco(nargs[0], nargs[1],nargs[2],nargs[3],nargs[4],args.verbose,args.ignore_image,args)
     elif command == "upload_dataset_from_voc":
-        if len(nargs) != 5:
+        if len(nargs) != 4:
             parser.print_help()
-            print("upload_dataset_from_voc [voc_anno_path] [voc_image_path] [project_id] [dataset_id] [user_id]")
+            print("upload_dataset_from_voc [voc_path] [project_id] [dataset_id] [user_id]")
         else:
-            upload_dataset_from_voc(nargs[0], nargs[1],nargs[2],nargs[3],nargs[4],args.verbose,args.ignore_image,args)
+            upload_dataset_from_voc(nargs[0],nargs[2],nargs[3],nargs[4],args.verbose,args.ignore_image,args)
     elif command == "upload_model_predict_result_from_list":
         if len(nargs) != 3:
             parser.print_help()

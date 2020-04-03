@@ -490,6 +490,7 @@ def copy_voc_by_percent(src_path,dir_path,percent=0,number=0):
         elif number:
             target = int(number)
         if target:
+            pbar = pyprind.ProgBar(len(src_list) if target > len(src_list) else target, monitor=True, title="copy coco")
             if not os.path.exists(dir_image_path):
                 os.makedirs(dir_image_path)
             if not os.path.exists(dir_anno_path):
@@ -505,6 +506,7 @@ def copy_voc_by_percent(src_path,dir_path,percent=0,number=0):
                     anno_name =image_id +".xml"
                     shutil.copyfile(os.path.join(src_anno_path,anno_name), os.path.join(dir_anno_path, anno_name))
                     shutil.copyfile(os.path.join(src_image_path,image_name), os.path.join(dir_image_path, image_name))
+            pbar.update()
 
 def copy_coco_by_percent(from_file_path,from_image_path,to_file_path,to_image_path,percent=0,number=0,args=None):
     if not percent and not number:
