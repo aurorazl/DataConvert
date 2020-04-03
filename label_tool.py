@@ -49,6 +49,7 @@ def get_value(root, name):
     except Exception:
         return re
 
+coco = None
 def get_class_number(name):
     number = 0
     if name == "work_uniformm":
@@ -56,8 +57,10 @@ def get_class_number(name):
     if name == "othe_hat":
         name = "other_hat"
     try:
-        res = requests.get(url="https://apulis-sz-dev-worker01.sigsus.cn/api/labels")
-        coco = json.loads(res.content)["categories"]
+        global coco
+        if not coco:
+            res = requests.get(url="https://apulis-sz-dev-worker01.sigsus.cn/api/labels")
+            coco = json.loads(res.content)["categories"]
     except Exception:
         with open(os.path.join("meta.json"), "r") as f:
             coco = json.load(f)["categories"]
@@ -973,6 +976,44 @@ def merge_json_to_ocr(json_path,ocr_out_path,prefix="",args=None):
             f.write(utils.convert_ocr_annotation_list_to_str(bboxs))
         pbar.update()
 
+def find_coco_dataset_category_ids(coco_anno_file_path):
+    category_ids = set()
+    coco = COCO(coco_anno_file_path)
+    categories = coco.dataset.get('categories')
+    ImgIDs = list(coco.imgs.keys())
+    pbar = pyprind.ProgBar(len(ImgIDs), monitor=True, title="counting coco")
+    for ImgID in ImgIDs:
+        anno = coco.loadAnns(coco.getAnnIds(imgIds=[ImgID]))
+        for one_anno in anno:
+            category_ids.add(one_anno["category_id"])
+        pbar.update()
+    print(category_ids)
+
+def find_voc_dataset_category_ids(voc_anno_path):
+    src_list = glob.glob(os.path.join(voc_anno_path,"*.xml"))
+    category_ids = {}
+    pbar = pyprind.ProgBar(len(src_list), monitor=True, title="counting voc")
+    for file in src_list:
+        tree = ET.parse(file)
+        root = tree.getroot()
+        for one in get(root, "object"):
+            name = get_value(one, "name")
+            category_ids[name] = get_class_number(name)
+        pbar.update()
+    print(category_ids)
+
+def find_json_dataset_category_ids(json_anno_path):
+    src_list = glob.glob(os.path.join(json_anno_path, "*.json"))
+    category_ids = set()
+    pbar = pyprind.ProgBar(len(src_list), monitor=True, title="counting json")
+    for file in src_list:
+        with open(file, "r") as f:
+            json_dict = json.load(f)
+        for one in json_dict["annotations"]:
+            category_ids.add(one["category_id"])
+        pbar.update()
+    print(category_ids)
+
 def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
         if len(nargs) != 2:
@@ -1130,6 +1171,24 @@ def run_command(args, command, nargs, parser):
             print("\n merge-json-to-ocr [json_path] [ocr_out_path] \n")
         else:
             merge_json_to_ocr(nargs[0],nargs[1],args.prefix,args)
+    elif command == "find_coco_dataset_category_ids":
+        if len(nargs)!=1:
+            parser.print_help()
+            print("\n find_coco_dataset_category_ids [coco_anno_path] \n")
+        else:
+            find_coco_dataset_category_ids(nargs[0])
+    elif command == "find_voc_dataset_category_ids":
+        if len(nargs)!=1:
+            parser.print_help()
+            print("\n find_voc_dataset_category_ids [voc_anno_path] \n")
+        else:
+            find_voc_dataset_category_ids(nargs[0])
+    elif command == "find_json_dataset_category_ids":
+        if len(nargs)!=1:
+            parser.print_help()
+            print("\n find_json_dataset_category_ids [json_anno_path] \n")
+        else:
+            find_json_dataset_category_ids(nargs[0])
     else:
         parser.print_help()
 
