@@ -126,13 +126,14 @@ def upload_model_predict_result_from_voc(voc_anno_path,voc_image_path,project_id
     with cd(out_json_path):
         upload_model_predict_result("images",project_id,dataset_id,verbose)
 
-def upload_model_predict_result_from_ocr(ocr_anno_path,project_id,dataset_id,verbose=True,args=None):
+def upload_model_predict_result_from_ocr(ocr_anno_path,ocr_image_path,project_id,dataset_id,verbose=True,args=None):
     utils.check_path_exist(ocr_anno_path)
+    utils.check_path_exist(ocr_image_path)
     out_json_path = os.path.join("./", "template_for_convert")
     utils.remove_directiry(out_json_path)
     os.system("mkdir %s" % out_json_path)
     args.ignore_image = True
-    label_tool.merge_ocr_to_json(ocr_anno_path,"",out_json_path,args=args)
+    label_tool.merge_ocr_to_json(ocr_anno_path,ocr_image_path,out_json_path,args=args)
     with cd(out_json_path):
         upload_model_predict_result("images",project_id,dataset_id,verbose)
 
@@ -186,11 +187,11 @@ def run_command(args, command, nargs, parser):
         else:
             upload_model_predict_result_from_voc(nargs[0], nargs[1],nargs[2],nargs[3],args.verbose,args)
     elif command == "upload_model_predict_result_from_ocr":
-        if len(nargs) != 3:
+        if len(nargs) != 4:
             parser.print_help()
             print("upload_model_predict_result_from_ocr [ocr_anno_path] [project_id] [dataset_id]")
         else:
-            upload_model_predict_result_from_ocr(nargs[0], nargs[1],nargs[2],args.verbose,args)
+            upload_model_predict_result_from_ocr(nargs[0], nargs[1],nargs[2],nargs[3],args.verbose,args)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='upload.py',
