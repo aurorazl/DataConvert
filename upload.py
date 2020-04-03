@@ -73,6 +73,17 @@ def upload_dataset_from_coco(coco_anno_path,image_path,project_id,dataset_id,use
     with cd(out_json_path):
         upload_dataset("images","images",project_id,dataset_id,verbose,ignore_image)
 
+def upload_dataset_from_voc(voc_anno_path,voc_image_path,project_id,dataset_id,user_id,verbose = False,ignore_image=False,args=None):
+    utils.check_path_exist(voc_anno_path)
+    utils.check_path_exist(voc_image_path)
+    out_json_path = os.path.join("./","template_for_convert")
+    utils.remove_directiry(out_json_path)
+    os.system("mkdir %s"% out_json_path)
+    label_tool.merge_voc_dataset_to_json_dataset(voc_anno_path,voc_image_path,out_json_path,args=args)
+    label_tool.generate_commit_json(out_json_path,user_id,args.base_category_num)
+    with cd(out_json_path):
+        upload_dataset("images","images",project_id,dataset_id,verbose,ignore_image)
+
 def upload_model_predict_result_from_list(list_file_path,project_id,dataset_id,verbose=True,args=None):
     utils.check_path_exist(list_file_path)
     out_json_path = os.path.join("./", "template_for_convert")

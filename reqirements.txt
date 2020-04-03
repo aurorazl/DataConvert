@@ -1,7 +1,8 @@
 Cython
 pyprind
 psutil
-numpy
 pycocotools
 matplotlib
 Shapely
+Scikit-Image
+opencv-python
