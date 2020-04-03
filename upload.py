@@ -86,6 +86,17 @@ def upload_dataset_from_voc(voc_path,project_id,dataset_id,user_id,verbose = Fal
     with cd(out_json_path):
         upload_dataset("images","images",project_id,dataset_id,verbose,ignore_image)
 
+def upload_dataset_from_ocr(ocr_anno_path,ocr_image_path,project_id,dataset_id,user_id,verbose = False,ignore_image=False,args=None):
+    utils.check_path_exist(ocr_anno_path)
+    utils.check_path_exist(ocr_image_path)
+    out_json_path = os.path.join("./","template_for_convert")
+    utils.remove_directiry(out_json_path)
+    os.system("mkdir %s"% out_json_path)
+    label_tool.merge_ocr_to_json(ocr_anno_path,ocr_image_path,out_json_path,args=args)
+    label_tool.generate_commit_json(out_json_path,user_id,args.base_category_num)
+    with cd(out_json_path):
+        upload_dataset("images","images",project_id,dataset_id,verbose,ignore_image)
+
 def upload_model_predict_result_from_list(list_file_path,project_id,dataset_id,verbose=True,args=None):
     utils.check_path_exist(list_file_path)
     out_json_path = os.path.join("./", "template_for_convert")
@@ -120,6 +131,12 @@ def run_command(args, command, nargs, parser):
             print("upload_dataset_from_voc [voc_path] [project_id] [dataset_id] [user_id]")
         else:
             upload_dataset_from_voc(nargs[0],nargs[1],nargs[2],nargs[3],args.verbose,args.ignore_image,args)
+    elif command == "upload_dataset_from_ocr":
+        if len(nargs) != 5:
+            parser.print_help()
+            print("upload_dataset_from_ocr [ocr_anno_path] [ocr_image_path] [project_id] [dataset_id] [user_id]")
+        else:
+            upload_dataset_from_ocr(nargs[0],nargs[1],nargs[2],nargs[3],nargs[4],args.verbose,args.ignore_image,args)
     elif command == "upload_model_predict_result_from_list":
         if len(nargs) != 3:
             parser.print_help()
