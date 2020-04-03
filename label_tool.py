@@ -912,8 +912,8 @@ def merge_ocr_to_json(ocr_anno_path,ocr_image_path,json_path,prefix="",args=None
     name_dict = utils.gen_image_name_list(ocr_anno_path, ocr_image_path, json_anno_path,prefix,args)
     pbar = pyprind.ProgBar(len(name_dict), monitor=True, title="writing to file")
     for new_image_id,old_image_id in name_dict.items():
-        image_id_list.append(new_image_id)
-        json_dict = {"images": [{"file_name": str(new_image_id) + '.jpg', "height": -1, "width": -1, "id": new_image_id,
+        image_id_list.append(args.anno_after_prefix + str(new_image_id))
+        json_dict = {"images": [{"file_name": args.image_after_prefix + str(new_image_id) + '.jpg', "height": -1, "width": -1, "id": args.anno_after_prefix + str(new_image_id),
                                  "license": 2, "coco_url": None, "data_captured": None, "flickr_url": None}],
                      "annotations": []
                      }
