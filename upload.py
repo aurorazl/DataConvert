@@ -160,6 +160,14 @@ if __name__ == '__main__':
                         help="base_category_num",
                         action="store",type=int
                         )
+    parser.add_argument("--anno-before-prefix","-abp", default="",help="before anno prefix",action="store")
+    parser.add_argument("--anno-after-prefix", "-aap",default="",help="after anno prefix",action="store")
+    parser.add_argument("--anno-before-suffix","-abs", default="",help="before anno suffix",action="store")
+    parser.add_argument("--anno-after-suffix", "-aas",default="",help="after anno suffix",action="store")
+    parser.add_argument("--image-before-prefix","-ibp", default="",help="before image prefix",action="store")
+    parser.add_argument("--image-after-prefix","-iap", default="",help="after image prefix",action="store")
+    parser.add_argument("--image-before-suffix","-ibs", default="jpg",help="before image suffix",action="store")
+    parser.add_argument("--image-after-suffix", "-ias",default="jpg",help="after image suffix",action="store")
     args = parser.parse_args()
     command = args.command
     nargs = args.nargs
