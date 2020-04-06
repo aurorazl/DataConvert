@@ -2,6 +2,7 @@
 import argparse
 import textwrap
 import os
+import json
 
 import label_tool
 import utils
@@ -137,6 +138,75 @@ def upload_model_predict_result_from_ocr(ocr_anno_path,ocr_image_path,project_id
     with cd(out_json_path):
         upload_model_predict_result("images",project_id,dataset_id,verbose)
 
+def auto_upload_model_predict_result(anno_path,image_path,project_id,dataset_id,verbose=True,args=None):
+    utils.check_path_exist(anno_path)
+    utils.check_path_exist(image_path)
+    if utils.path_is_file(anno_path):
+        file_type = os.path.splitext(anno_path)[1]
+        if file_type == ".json":
+            with open(anno_path,"r") as f:
+                di = json.load(f)
+            if isinstance(di,dict):
+                print("uploading coco annotation file")
+                upload_model_predict_result_from_coco(anno_path,project_id,dataset_id,verbose,args)
+            elif isinstance(di,list):
+                print("uploading list annotation file")
+                upload_model_predict_result_from_list(anno_path, project_id, dataset_id, verbose, args)
+            else:
+                raise Exception("wrong annotation file type")
+        else:
+            raise Exception("Only json suffix supported.")
+    else:
+        src_list = os.listdir(anno_path)
+        first_file = src_list[0]
+        file_type = os.path.splitext(first_file)[1]
+        if file_type == ".xml":
+            print("uploading voc annotation file")
+            upload_model_predict_result_from_voc(anno_path,image_path, project_id, dataset_id, verbose, args)
+        elif file_type == ".txt":
+            print("uploading ocr annotation file")
+            upload_model_predict_result_from_ocr(anno_path, image_path, project_id, dataset_id, verbose, args)
+        elif file_type == ".json":
+            print("uploading json annotation file")
+            upload_model_predict_result(anno_path, project_id, dataset_id, verbose)
+        else:
+            raise Exception("current support suffix : txt xml json")
+
+def auto_upload_dataset(anno_path,image_path,project_id,dataset_id,user_id,verbose = False,ignore_image=False,args=None):
+    utils.check_path_exist(anno_path)
+    utils.check_path_exist(image_path)
+    if utils.path_is_file(anno_path):
+        file_type = os.path.splitext(anno_path)[1]
+        if file_type == ".json":
+            with open(anno_path, "r") as f:
+                di = json.load(f)
+            if isinstance(di, dict):
+                print("uploading coco dataset")
+                upload_dataset_from_coco(anno_path,image_path, project_id, dataset_id,user_id, verbose,ignore_image, args)
+            else:
+                raise Exception("wrong dataset type")
+        else:
+            raise Exception("Only json suffix supported.")
+    else:
+        src_list = os.listdir(anno_path)
+        first_file = src_list[0]
+        file_type = os.path.splitext(first_file)[1]
+        if file_type == ".xml":
+            print("uploading voc dataset")
+            path = os.path.dirname(anno_path)
+            path2 = os.path.dirname(image_path)
+            if(path!=path2):
+                raise Exception("wrong path")
+            upload_dataset_from_voc(path, project_id, dataset_id,user_id, verbose,ignore_image, args)
+        elif file_type == ".txt":
+            print("uploading ocr dataset")
+            upload_dataset_from_ocr(anno_path,image_path, project_id, dataset_id,user_id, verbose,ignore_image, args)
+        elif file_type == ".json":
+            print("uploading json dataset")
+            upload_dataset(image_path,anno_path, project_id, dataset_id, verbose,ignore_image)
+        else:
+            raise Exception("current support suffix : txt xml json")
+
 def run_command(args, command, nargs, parser):
     if command == "upload_dataset":
         if len(nargs) != 4:
@@ -189,9 +259,21 @@ def run_command(args, command, nargs, parser):
     elif command == "upload_model_predict_result_from_ocr":
         if len(nargs) != 4:
             parser.print_help()
-            print("upload_model_predict_result_from_ocr [ocr_anno_path] [project_id] [dataset_id]")
+            print("upload_model_predict_result_from_ocr [ocr_anno_path] [ocr_image_path] [project_id] [dataset_id]")
         else:
             upload_model_predict_result_from_ocr(nargs[0], nargs[1],nargs[2],nargs[3],args.verbose,args)
+    elif command == "upload-prediction":
+        if len(nargs) != 4:
+            parser.print_help()
+            print("upload-prediction [anno_path] [image_path] [project_id] [dataset_id]")
+        else:
+            auto_upload_model_predict_result(nargs[0], nargs[1],nargs[2],nargs[3],args.verbose,args)
+    elif command == "upload-dataset":
+        if len(nargs) != 5:
+            parser.print_help()
+            print("upload-dataset [anno_path] [image_path] [project_id] [dataset_id] [uid]")
+        else:
+            auto_upload_dataset(nargs[0], nargs[1],nargs[2],nargs[3],nargs[4],args.verbose,args.ignore_image,args)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='upload.py',
